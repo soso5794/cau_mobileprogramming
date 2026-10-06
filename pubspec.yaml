@@ -1,0 +1,28 @@
+name: exercise_assist
+description: "운동 Assist - 날씨 기반 운동 추천 + AI 운동 도우미 (모바일프로그래밍 팀 프로젝트)"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  # 5강 State Management에서 배운 Provider 패턴 (ChangeNotifierProvider, context.watch/read)
+  provider: ^6.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  # 이번 제출에서는 이미지/폰트 asset을 쓰지 않음.
+  # 나중에 로고 이미지 등을 넣으면 아래 주석을 풀고 assets/ 폴더에 파일을 넣으세요.
+  # assets:
+  #   - assets/images/
