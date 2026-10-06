@@ -1,3 +1,4 @@
+
 # 운동 Assist 🏃
 
 날씨 기반 운동 지수 + 주간 운동 계획 + AI 운동 도우미 앱 (모바일프로그래밍 팀 프로젝트)
@@ -28,3 +29,6 @@ flutter run
 
 - 날씨 데이터와 AI 답변은 **더미 데이터**입니다.
 - TODO: 날씨 API 연결 (`AppState.weatherFor`), LLM API 연결 (`AiChatScreen._askAi`, `AnalysisScreen._advice`), 로그인 정보 저장(persistence)
+
+# cau_mobileprogramming
+mobileprogramming assignment
