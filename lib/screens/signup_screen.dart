@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
+import '../theme/app_theme.dart';
 
 /// PDF 2페이지 ③: 새로가입 클릭 시 → 회원정보 입력 (이름, 나이, 아이디, 비밀번호)
 class SignupScreen extends StatefulWidget {
@@ -52,47 +53,73 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       // AppBar가 있으면 뒤로가기 버튼은 자동으로 생긴다 (4강)
-      appBar: AppBar(title: const Text('회원가입')),
+      appBar: AppBar(
+        title: const Text('회원가입'),
+        backgroundColor: Colors.transparent,
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: '이름', border: OutlineInputBorder()),
-              validator: _required,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _age,
-              decoration: const InputDecoration(labelText: '나이', border: OutlineInputBorder()),
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                if (_required(v) != null) return _required(v);
-                final n = int.tryParse(v!.trim());
-                if (n == null || n <= 0 || n > 120) return '올바른 나이를 입력해주세요.';
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _id,
-              decoration: const InputDecoration(labelText: '아이디', border: OutlineInputBorder()),
-              validator: _required,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _pw,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: '비밀번호', border: OutlineInputBorder()),
-              validator: (v) =>
-                  (v == null || v.length < 4) ? '비밀번호는 4자 이상이어야 합니다.' : null,
+            Text('반가워요! 👋',
+                style: text.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text('운동 추천을 위해 기본 정보를 알려주세요.',
+                style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+            const SizedBox(height: 20),
+            SectionCard(
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _name,
+                    decoration: appInputDecoration(context,
+                        label: '이름', icon: Icons.badge_outlined),
+                    validator: _required,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _age,
+                    decoration: appInputDecoration(context,
+                        label: '나이', icon: Icons.cake_outlined),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (_required(v) != null) return _required(v);
+                      final n = int.tryParse(v!.trim());
+                      if (n == null || n <= 0 || n > 120) return '올바른 나이를 입력해주세요.';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _id,
+                    decoration: appInputDecoration(context,
+                        label: '아이디', icon: Icons.person_outline),
+                    validator: _required,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _pw,
+                    obscureText: true,
+                    decoration: appInputDecoration(context,
+                        label: '비밀번호 (4자 이상)', icon: Icons.lock_outline),
+                    validator: (v) =>
+                        (v == null || v.length < 4) ? '비밀번호는 4자 이상이어야 합니다.' : null,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
-            FilledButton(onPressed: _submit, child: const Text('가입하기')),
+            FilledButton.icon(
+              onPressed: _submit,
+              icon: const Icon(Icons.check_rounded),
+              label: const Text('가입하기'),
+            ),
           ],
         ),
       ),

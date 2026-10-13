@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart'; // ThemeMode 때문에 foundation → material
 
 import 'weather.dart';
 
@@ -49,6 +49,15 @@ class AppState extends ChangeNotifier {
   void logout() {
     loginId = null;
     tabIndex = 0;
+    notifyListeners();
+  }
+
+  // ───────────────────────── 테마 (라이트/다크) ─────────────────────────
+  /// [10강] ThemeMode: light / dark / system(폰 설정 따라감)
+  ThemeMode themeMode = ThemeMode.light;
+
+  void toggleTheme() {
+    themeMode = themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
     notifyListeners();
   }
 

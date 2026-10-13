@@ -5,6 +5,7 @@ import 'models/app_state.dart';
 import 'screens/home_shell.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(
@@ -22,13 +23,16 @@ class ExerciseAssistApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // [10강] theme(라이트) + darkTheme(다크)를 둘 다 주고, themeMode로 어느 쪽을 쓸지 고른다.
+    // themeMode가 AppState에 있으므로 watch → 토글 버튼을 누르면 앱 전체 색이 바뀐다.
+    final themeMode = context.watch<AppState>().themeMode;
+
     return MaterialApp(
       title: '운동 Assist',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: themeMode,
       // [4강] Named routes: 화면 이름표를 한 곳에 모아둔다.
       initialRoute: '/',
       routes: {

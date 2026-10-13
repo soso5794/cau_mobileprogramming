@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
+import '../theme/app_theme.dart';
 
 /// PDF 2페이지: 로그인 페이지
 /// ① 아이디 입력 ② 비밀번호 입력 ③ 새로가입 → 회원정보 입력 화면 ④ 로그인 버튼
+///
+/// [꾸미기] 파랑→청록 그라데이션 배경 위에 흰 카드가 떠 있는 구조.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -16,10 +19,11 @@ class _LoginScreenState extends State<LoginScreen> {
   // [3강] TextField의 값을 읽으려면 TextEditingController를 쓴다.
   final _idController = TextEditingController();
   final _pwController = TextEditingController();
+  bool _obscure = true; // 비밀번호 보이기/숨기기
 
   @override
   void dispose() {
-    // [5강] initState에서 만든 것 / State가 들고 있는 컨트롤러는 dispose에서 정리 (메모리 누수 방지)
+    // [5강] State가 들고 있는 컨트롤러는 dispose에서 정리 (메모리 누수 방지)
     _idController.dispose();
     _pwController.dispose();
     super.dispose();
@@ -54,63 +58,119 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final text = Theme.of(context).textTheme;
 
     return Scaffold(
-      body: SafeArea(
-        // 키보드가 올라와도 화면이 넘치지(overflow) 않도록 스크롤 가능하게 감싼다.
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 로고: "운동 Assist" + 체크 아이콘
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      body: Container(
+        // 화면 전체 그라데이션 배경
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
+          ),
+        ),
+        child: SafeArea(
+          // 키보드가 올라와도 화면이 넘치지(overflow) 않도록 스크롤 가능하게 감싼다.
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                // 웹/태블릿에서 너무 넓게 퍼지지 않도록 최대 폭 제한
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('운동 ',
-                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                    Text('Assist',
-                        style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            fontStyle: FontStyle.italic,
-                            color: primary)),
-                    Icon(Icons.check, size: 40, color: primary),
+                    // ───── 로고 ─────
+                    Container(
+                      width: 84,
+                      height: 84,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(50), // 반투명 흰 원
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check_rounded, size: 56, color: Colors.white),
+                    ),
+                    const SizedBox(height: 16),
+                    Text.rich(
+                      // Text.rich: 한 줄 안에서 글자마다 다른 스타일
+                      TextSpan(children: [
+                        const TextSpan(text: '운동 '),
+                        TextSpan(
+                          text: 'Assist',
+                          style: const TextStyle(fontStyle: FontStyle.italic).copyWith(
+                            color: const Color(0xFFD9FF5B), // 형광 라임 포인트
+                          ),
+                        ),
+                      ]),
+                      textAlign: TextAlign.center,
+                      style: text.displaySmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '날씨를 읽고, 오늘의 운동을 추천해요',
+                      textAlign: TextAlign.center,
+                      style: text.bodyLarge?.copyWith(color: Colors.white.withAlpha(220)),
+                    ),
+                    const SizedBox(height: 36),
+
+                    // ───── 입력 카드 ─────
+                    SectionCard(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('로그인',
+                              style: text.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 16),
+                          // ① 아이디
+                          TextField(
+                            controller: _idController,
+                            decoration: appInputDecoration(context,
+                                label: '아이디', icon: Icons.person_outline),
+                            textInputAction: TextInputAction.next,
+                          ),
+                          const SizedBox(height: 12),
+                          // ② 비밀번호 (눈 아이콘으로 보이기/숨기기)
+                          TextField(
+                            controller: _pwController,
+                            obscureText: _obscure,
+                            decoration: appInputDecoration(
+                              context,
+                              label: '비밀번호',
+                              icon: Icons.lock_outline,
+                              suffix: IconButton(
+                                icon: Icon(_obscure
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined),
+                                onPressed: () => setState(() => _obscure = !_obscure),
+                              ),
+                            ),
+                            onSubmitted: (_) => _login(),
+                          ),
+                          const SizedBox(height: 20),
+                          // ④ 로그인
+                          FilledButton(onPressed: _login, child: const Text('로그인')),
+                          const SizedBox(height: 8),
+                          // ③ 새로가입
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('아직 회원이 아니신가요?', style: text.bodyMedium),
+                              TextButton(onPressed: _goSignup, child: const Text('새로가입')),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 80),
-                // ① 아이디
-                const Text('아이디', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                TextField(
-                  controller: _idController,
-                  decoration: const InputDecoration(border: OutlineInputBorder()),
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 12),
-                // ② 비밀번호
-                const Text('비밀번호', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                TextField(
-                  controller: _pwController,
-                  obscureText: true, // 비밀번호 가리기
-                  decoration: const InputDecoration(border: OutlineInputBorder()),
-                  onSubmitted: (_) => _login(),
-                ),
-                const SizedBox(height: 8),
-                // ③ 새로가입  ④ 로그인
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton(onPressed: _goSignup, child: const Text('새로가입')),
-                    const SizedBox(width: 8),
-                    FilledButton(onPressed: _login, child: const Text('로그인')),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         ),

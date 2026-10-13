@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 /// 채팅 메시지 한 개
 class ChatMessage {
   final String text;
@@ -29,6 +31,13 @@ class _AiChatScreenState extends State<AiChatScreen> {
         '예) 농구 5대5 경기에서 엘리베이터 전술이 뭐야?', fromUser: false),
   ];
   bool _waiting = false; // AI 답변 기다리는 중인지
+
+  static const _suggestions = [
+    '엘리베이터 전술이 뭐야?',
+    '러닝 전 스트레칭 추천',
+    '초보 등산 코스 팁',
+    '비 오는 날 실내 운동',
+  ];
 
   @override
   void dispose() {
@@ -98,21 +107,43 @@ class _AiChatScreenState extends State<AiChatScreen> {
             },
           ),
         ),
-        const Divider(height: 1),
-        // ① 질문 입력창
+        // 추천 질문 칩: 누르면 입력칸에 질문이 채워진다
+        SizedBox(
+          height: 44,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            children: [
+              for (final q in _suggestions)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ActionChip(
+                    avatar: const Icon(Icons.lightbulb_outline, size: 16),
+                    label: Text(q),
+                    shape: const StadiumBorder(),
+                    onPressed: () {
+                      _controller.text = q;
+                      _send();
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+        // ① 질문 입력창 (둥근 알약 모양)
         SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: '운동에 대해 질문해보세요',
-                      border: OutlineInputBorder(),
-                      isDense: true,
+                    decoration: appInputDecoration(
+                      context,
+                      hint: '운동에 대해 질문해보세요',
+                      icon: Icons.chat_bubble_outline_rounded,
                     ),
                     onSubmitted: (_) => _send(),
                   ),
@@ -120,7 +151,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 const SizedBox(width: 8),
                 IconButton.filled(
                   onPressed: _waiting ? null : _send, // 기다리는 중엔 버튼 비활성화
-                  icon: const Icon(Icons.send),
+                  iconSize: 24,
+                  style: IconButton.styleFrom(minimumSize: const Size(52, 52)),
+                  icon: const Icon(Icons.arrow_upward_rounded),
                 ),
               ],
             ),
@@ -131,7 +164,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 }
 
-/// 말풍선 하나: AI는 왼쪽(아이콘 + 회색), 사용자는 오른쪽(파란색)
+/// 말풍선 하나: AI는 왼쪽(아이콘 + 흰 말풍선), 사용자는 오른쪽(파란 그라데이션)
+/// [꾸미기] 말하는 쪽 모서리만 뾰족하게(4) 해서 "꼬리"처럼 보이게 했다.
 class _Bubble extends StatelessWidget {
   final ChatMessage message;
 
@@ -141,32 +175,60 @@ class _Bubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final isUser = message.fromUser;
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    const big = Radius.circular(18);
+    const small = Radius.circular(4);
 
     final bubble = Flexible(
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.symmetric(vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isUser ? scheme.primaryContainer : Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(12),
+          gradient: isUser
+              ? const LinearGradient(
+                  colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
+                )
+              : null,
+          color: isUser ? null : (isDark ? scheme.surfaceContainerHigh : Colors.white),
+          borderRadius: BorderRadius.only(
+            topLeft: isUser ? big : small,
+            topRight: isUser ? small : big,
+            bottomLeft: big,
+            bottomRight: big,
+          ),
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
         ),
-        child: Text(message.text),
+        child: Text(
+          message.text,
+          style: TextStyle(color: isUser ? Colors.white : null, height: 1.4),
+        ),
       ),
     );
 
     final avatar = CircleAvatar(
-      radius: 16,
+      radius: 17,
+      backgroundColor: isUser ? scheme.secondaryContainer : scheme.primary,
+      foregroundColor: isUser ? scheme.onSecondaryContainer : scheme.onPrimary,
       child: isUser
-          ? const Icon(Icons.person, size: 18)
-          : const Text('AI', style: TextStyle(fontSize: 12)),
+          ? const Icon(Icons.person_rounded, size: 20)
+          : const Icon(Icons.smart_toy_rounded, size: 20),
     );
 
     return Row(
       mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: isUser
-          ? [const SizedBox(width: 48), bubble, const SizedBox(width: 6), avatar]
-          : [avatar, const SizedBox(width: 6), bubble, const SizedBox(width: 48)],
+          ? [const SizedBox(width: 48), bubble, const SizedBox(width: 8), avatar]
+          : [avatar, const SizedBox(width: 8), bubble, const SizedBox(width: 48)],
     );
   }
 }

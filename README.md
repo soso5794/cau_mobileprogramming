@@ -18,6 +18,18 @@
 
 공유 상태는 `lib/models/app_state.dart` (ChangeNotifier + Provider).
 
+
+## 디자인 (2차 제출: Widget Decoration)
+
+- `lib/theme/app_theme.dart` 에서 앱 전체 테마를 한 곳에 정의
+  - `ColorScheme.fromSeed` (브랜드 파랑 `#1E6BFF`), 라이트/다크 테마, 버튼·슬라이더·스낵바 컴포넌트 테마
+  - 공통 위젯: `SectionCard`(둥근 카드 + 그림자), `SectionTitle`, `appInputDecoration`(둥근 입력칸)
+  - `ScoreColors`: 운동지수 색 (좋음 초록 / 보통 주황 / 나쁨 빨강)
+- 운동별 대표 색 (`sportColor`) — 운동 버튼, 표, 추천 일정에 통일 적용
+- 다크모드 토글 (상단 AppBar 버튼)
+- 애니메이션: 점수 게이지 `TweenAnimationBuilder`, 요일 선택 `AnimatedContainer`
+- 화면별: 로그인 그라데이션 배경, NavigationBar(M3), 채팅 말풍선 꼬리 + 추천 질문 칩
+
 ## 실행
 
 ```bash
