@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
+import '../routing/app_routes.dart';
 import '../models/sport_icons.dart';
 import '../theme/app_theme.dart';
 
 /// PDF 3페이지 ⑤: 자주 가는 운동 위치 여러 개를 저장 (입력 가능)
-/// ⑥ 위치를 고르면 → pop(위치)로 돌아가고, 호출한 쪽에서 운동분석 탭으로 이동시킨다.
+/// ⑥ 위치를 고르면 분석 대상을 저장하고 /analysis로 이동한다.
 class LocationScreen extends StatefulWidget {
   // [4강] 앞 화면에서 생성자로 넘겨받는 데이터
   final String sport;
@@ -136,8 +138,11 @@ class _LocationScreenState extends State<LocationScreen> {
                               onPressed: () =>
                                   context.read<AppState>().removeLocation(sport, loc),
                             ),
-                            // ⑥ 선택한 위치를 결과로 돌려주며 닫기
-                            onTap: () => Navigator.pop(context, loc),
+                            // 직접 URL 진입도 동일한 분석 화면으로 연결한다.
+                            onTap: () {
+                              context.read<AppState>().selectTarget(sport, loc);
+                              context.go(AppRoutes.analysis);
+                            },
                             ),
                           ),
                         );

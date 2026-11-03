@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
+import '../routing/app_routes.dart';
 import '../theme/app_theme.dart';
 
 /// PDF 2페이지: 로그인 페이지
@@ -40,13 +42,17 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
-    // [4강] pushReplacement: 로그인 화면을 스택에서 빼고 홈으로 교체 → 뒤로가기로 로그인에 못 돌아옴
-    Navigator.pushReplacementNamed(context, '/home');
+    // AppState 알림에 따라 라우터가 원래 목적지(또는 운동 선택)로 이동한다.
   }
 
   Future<void> _goSignup() async {
-    // [4강] await Navigator.push → 회원가입 화면이 pop(context, 값)으로 돌려준 아이디를 받는다.
-    final newId = await Navigator.pushNamed(context, '/signup');
+    // 회원가입 결과를 받아 아이디를 채운다. 로그인 전 목적지도 유지한다.
+    final newId = await context.pushNamed<String>(
+      AppRoutes.signupName,
+      queryParameters: AppRoutes.returnQuery(
+        GoRouterState.of(context).uri.queryParameters['from'],
+      ),
+    );
     if (!mounted) return; // await 뒤에는 화면이 아직 살아있는지 확인
     if (newId is String) {
       _idController.text = newId;
@@ -127,6 +133,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           Text('로그인',
                               style: text.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          const Text('데모 로그인 · 실제 계정 인증이 아닙니다.'),
                           const SizedBox(height: 16),
                           // ① 아이디
                           TextField(

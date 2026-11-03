@@ -69,7 +69,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   /// 가짜 AI. 1초 기다렸다가 답을 돌려준다.
   Future<String> _askAi(String question) async {
-    await Future.delayed(const Duration(seconds: 1));
+    await Future<void>.delayed(const Duration(seconds: 1));
     return '(예시 답변) "$question"에 대한 답변은 LLM 연결 후 제공될 예정이에요.';
   }
 

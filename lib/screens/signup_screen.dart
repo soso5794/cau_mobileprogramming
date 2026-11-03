@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
+import '../routing/app_routes.dart';
 import '../theme/app_theme.dart';
 
 /// PDF 2페이지 ③: 새로가입 클릭 시 → 회원정보 입력 (이름, 나이, 아이디, 비밀번호)
@@ -45,7 +47,20 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
     // [4강] pop으로 값을 돌려준다 → 로그인 화면의 await가 이 아이디를 받는다.
-    Navigator.pop(context, _id.text.trim());
+    if (context.canPop()) {
+      context.pop(_id.text.trim());
+    } else {
+      _backToLogin();
+    }
+  }
+
+  void _backToLogin() {
+    context.go(Uri(
+      path: AppRoutes.login,
+      queryParameters: AppRoutes.returnQuery(
+        GoRouterState.of(context).uri.queryParameters['from'],
+      ),
+    ).toString());
   }
 
   String? _required(String? v) =>
@@ -57,8 +72,15 @@ class _SignupScreenState extends State<SignupScreen> {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      // AppBar가 있으면 뒤로가기 버튼은 자동으로 생긴다 (4강)
+      // 직접 URL로 들어온 경우에도 로그인으로 돌아갈 수 있다.
       appBar: AppBar(
+        leading: BackButton(onPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            _backToLogin();
+          }
+        }),
         title: const Text('회원가입'),
         backgroundColor: Colors.transparent,
       ),

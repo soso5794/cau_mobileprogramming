@@ -5,7 +5,8 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.12.0 <4.0.0'
+  flutter: '>=3.44.0'
 
 dependencies:
   flutter:
@@ -13,6 +14,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   # 5강 State Management에서 배운 Provider 패턴 (ChangeNotifierProvider, context.watch/read)
   provider: ^6.1.2
+  go_router: ^18.1.2
 
 dev_dependencies:
   flutter_test:
