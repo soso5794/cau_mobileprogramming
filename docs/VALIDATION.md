@@ -55,5 +55,5 @@
 - `git push -u origin assignment/routing-screens` 성공. 최초 업로드 HEAD `d162ddb2cf3f459d7450ccdd56f683bd4c324a72`가 원격 브랜치와 일치했다.
 - `lib/`, `pubspec.yaml`, `pubspec.lock`, 테스트/문서를 포함한다. `build/`, `.dart_tool/`은 추적 및 업로드 대상에 없다.
 - [과제 브랜치](https://github.com/soso5794/cau_mobileprogramming/tree/assignment/routing-screens) · [main과 비교](https://github.com/soso5794/cau_mobileprogramming/compare/main...assignment/routing-screens).
-- main 병합, PR 생성, eclass 제출은 수행하지 않았다.
+- PR #1 생성 및 main 병합이 완료되었다. eclass 제출 여부는 별도로 확인해야 한다.
 - 소스/의존성은 검증 이후 변경하지 않았다. 이번 후속 변경은 이 업로드 기록뿐이므로 Flutter 검증을 재실행하지 않았다.
