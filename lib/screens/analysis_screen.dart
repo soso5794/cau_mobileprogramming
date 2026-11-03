@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
+import '../routing/app_routes.dart';
 import '../models/sport_icons.dart';
 import '../models/weather.dart';
 import '../theme/app_theme.dart';
@@ -56,7 +58,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   style: TextStyle(color: scheme.onSurfaceVariant)),
               const SizedBox(height: 20),
               FilledButton.icon(
-                onPressed: () => context.read<AppState>().goToTab(0),
+                onPressed: () => context.go(AppRoutes.sports),
                 icon: const Icon(Icons.sports_basketball_outlined),
                 label: const Text('운동 선택하러 가기'),
               ),
@@ -225,9 +227,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                             Icon(Icons.schedule_rounded,
                                 size: 16, color: scheme.onSurfaceVariant),
                             const SizedBox(width: 4),
-                            Text(_todayText(),
-                                style: text.bodySmall
-                                    ?.copyWith(color: scheme.onSurfaceVariant)),
+                            Flexible(
+                              child: Text(_todayText(),
+                                  textAlign: TextAlign.end,
+                                  style: text.bodySmall
+                                      ?.copyWith(color: scheme.onSurfaceVariant)),
+                            ),
                           ],
                         ),
                       ),

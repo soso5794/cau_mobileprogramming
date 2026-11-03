@@ -17,7 +17,15 @@ class AppState extends ChangeNotifier {
   // ───────────────────────── 회원 ─────────────────────────
   final Map<String, String> _passwords = {}; // 아이디 -> 비밀번호
   final Map<String, String> _names = {}; // 아이디 -> 이름
-  String? loginId;
+  final ValueNotifier<String?> _loginId = ValueNotifier(null);
+  String? get loginId => _loginId.value;
+  Listenable get authChanges => _loginId;
+
+  @override
+  void dispose() {
+    _loginId.dispose();
+    super.dispose();
+  }
 
   String? get userName => loginId == null ? null : (_names[loginId] ?? loginId);
 
@@ -41,14 +49,13 @@ class AppState extends ChangeNotifier {
   bool login(String id, String password) {
     if (id.isEmpty || password.isEmpty) return false;
     if (_passwords.containsKey(id) && _passwords[id] != password) return false;
-    loginId = id;
+    _loginId.value = id;
     notifyListeners();
     return true;
   }
 
   void logout() {
-    loginId = null;
-    tabIndex = 0;
+    _loginId.value = null;
     notifyListeners();
   }
 
@@ -58,15 +65,6 @@ class AppState extends ChangeNotifier {
 
   void toggleTheme() {
     themeMode = themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-    notifyListeners();
-  }
-
-  // ───────────────────────── 하단 탭 ─────────────────────────
-  /// 0: 운동선택, 1: Plan, 2: 운동분석, 3: AI
-  int tabIndex = 0;
-
-  void goToTab(int index) {
-    tabIndex = index;
     notifyListeners();
   }
 

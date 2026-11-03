@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 import 'models/app_state.dart';
-import 'screens/home_shell.dart';
-import 'screens/login_screen.dart';
-import 'screens/signup_screen.dart';
+import 'routing/app_router.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -18,8 +17,31 @@ void main() {
   );
 }
 
-class ExerciseAssistApp extends StatelessWidget {
-  const ExerciseAssistApp({super.key});
+class ExerciseAssistApp extends StatefulWidget {
+  const ExerciseAssistApp({super.key, this.initialLocation});
+  final String? initialLocation;
+
+  @override
+  State<ExerciseAssistApp> createState() => _ExerciseAssistAppState();
+}
+
+class _ExerciseAssistAppState extends State<ExerciseAssistApp> {
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = createAppRouter(
+      context.read<AppState>(),
+      initialLocation: widget.initialLocation,
+    );
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,19 +49,13 @@ class ExerciseAssistApp extends StatelessWidget {
     // themeMode가 AppState에 있으므로 watch → 토글 버튼을 누르면 앱 전체 색이 바뀐다.
     final themeMode = context.watch<AppState>().themeMode;
 
-    return MaterialApp(
+    return MaterialApp.router(
       title: '운동 Assist',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
-      // [4강] Named routes: 화면 이름표를 한 곳에 모아둔다.
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/home': (context) => const HomeShell(),
-      },
+      routerConfig: _router,
     );
   }
 }

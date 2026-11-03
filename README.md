@@ -3,6 +3,19 @@
 
 날씨 기반 운동 지수 + 주간 운동 계획 + AI 운동 도우미 앱 (모바일프로그래밍 팀 프로젝트)
 
+## 이번 주 제출: Routing screens
+
+기존 제출의 4개 탭과 로그인/회원가입/종목별 위치 화면에 URL 라우팅을 추가했습니다.
+`MaterialApp.router` + `go_router`로 탭 전환, 종목 매개변수 전달, 뒤로 가기,
+로그인 전 목적지 복귀, 잘못된 주소 안내를 처리합니다.
+
+- [과제 설명·화면 주소·시연 순서](docs/ROUTING_ASSIGNMENT.md)
+- [아키텍처](docs/ARCHITECTURE.md) · [클래스 계약](docs/CLASS_DESIGN.md)
+- [실행 검증과 한계](docs/VALIDATION.md)
+- Flutter **3.44.0 이상**, Dart **3.12.0 이상** 필요
+- 이미지/폰트 assets 미사용 (`assets/` 불필요)
+- 팀 저장소를 **2026년 12월 25일까지 public**으로 유지해야 합니다.
+
 ## 화면 구성
 
 | 화면 | 파일 | 설명 |
@@ -16,7 +29,7 @@
 | Week Plan | `lib/screens/plan_screen.dart` | 운동×요일 적합도 표(O/△/X), 요일별 추천 일정 |
 | AI 도우미 | `lib/screens/ai_chat_screen.dart` | 운동 질문 챗봇 (현재 더미 응답) |
 
-공유 상태는 `lib/models/app_state.dart` (ChangeNotifier + Provider).
+공유 데이터는 `lib/models/app_state.dart` (ChangeNotifier + Provider), 화면 이동은 `lib/routing/app_router.dart`가 관리합니다.
 
 
 ## 디자인 (2차 제출: Widget Decoration)

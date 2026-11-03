@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
+import '../routing/app_routes.dart';
 import '../models/sport_icons.dart';
 import '../theme/app_theme.dart';
-import 'location_screen.dart';
 
 /// PDF 3페이지: 선호 운동 선택 화면 (하단 탭 0번)
 /// ① 로그인 후 등장, 큰 ⊕ 버튼
@@ -91,21 +92,15 @@ class SportSelectScreen extends StatelessWidget {
       },
     );
 
-    if (result != null) app.setSelectedSports(result);
+    if (context.mounted && result != null) app.setSelectedSports(result);
   }
 
-  /// ③ 운동 버튼 클릭 → 위치 입력 화면. 위치를 고르고 돌아오면 ⑥ 운동분석 탭으로 자동 이동.
-  Future<void> _openLocation(BuildContext context, String sport) async {
-    final app = context.read<AppState>();
-    // [4강] 생성자로 데이터 전달(sport) + await로 결과 받기(선택한 위치)
-    final location = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (_) => LocationScreen(sport: sport)),
+  /// 종목을 URL 매개변수로 전달한다. 상세 뒤로 가기는 운동 선택으로 돌아온다.
+  void _openLocation(BuildContext context, String sport) {
+    context.goNamed(
+      AppRoutes.locationsName,
+      pathParameters: {'sport': AppRoutes.sportId(sport)},
     );
-    if (location != null) {
-      app.selectTarget(sport, location);
-      app.goToTab(2); // 운동분석 탭
-    }
   }
 
   @override
