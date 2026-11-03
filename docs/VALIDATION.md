@@ -45,5 +45,5 @@
 - 모든 화면의 360dp/200% 글꼴/스크린리더 대응, 성능/보안 검증은 이번 과제 검증 범위에 포함하지 않는다.
 - 로그인은 기존 메모리 데모 인증이다. 서버 보안/실제 계정 로그인이 아니다. 재시작/새로고침 시 사용자 상태는 초기화된다.
 - 실제 날씨 API/LLM/지도/영구 저장은 추가하지 않았다.
-- 원격 GitHub push, PR 생성, eclass 제출은 수행하지 않았다. GitHub 연결은 앞선 권한 확인에서 pull=true/push=false였다.
+- 원격 GitHub 쓰기, PR 생성, eclass 제출은 수행하지 않았다. 변경 없이 확인하는 `git push --dry-run origin HEAD:refs/heads/assignment/routing-screens`가 `Permission denied to CircusHan` / HTTP 403으로 실패했다. GitHub 연결의 pull=true/push=false와 일치한다.
 - 원격 main을 작업 후 다시 조회했으며 기준 커밋과 동일했다. 로컬 구현 완료와 원격 제출 완료는 별개다.
