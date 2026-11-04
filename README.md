@@ -3,6 +3,10 @@
 
 날씨 기반 운동 지수 + 주간 운동 계획 + AI 운동 도우미 앱 (모바일프로그래밍 팀 프로젝트)
 
+## 팀원 GitHub ID
+
+- [CircusHan](https://github.com/CircusHan)
+
 ## 이번 주 제출: Routing screens
 
 기존 제출의 4개 탭과 로그인/회원가입/종목별 위치 화면에 URL 라우팅을 추가했습니다.
