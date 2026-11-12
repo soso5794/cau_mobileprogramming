@@ -7,13 +7,14 @@
 
 - [CircusHan](https://github.com/CircusHan)
 
-## 이번 주 제출: Routing screens
+## 이번 주 제출: Stateful widgets
 
-기존 제출의 4개 탭과 로그인/회원가입/종목별 위치 화면에 URL 라우팅을 추가했습니다.
-`MaterialApp.router` + `go_router`로 탭 전환, 종목 매개변수 전달, 뒤로 가기,
-로그인 전 목적지 복귀, 잘못된 주소 안내를 처리합니다.
+이전 Routing screens 제출을 바탕으로 `StatefulWidget`을 활용한 **알림 설정**과
+**검색 가능한 운동 선택창**을 추가했습니다. 사용자의 입력에 따라 `setState()`로
+화면을 갱신하고, 임시 변경과 저장된 데이터를 구분합니다. 기존 4개 탭과 URL 라우팅은 유지합니다.
 
-- [과제 설명·화면 주소·시연 순서](docs/ROUTING_ASSIGNMENT.md)
+- **[Stateful widgets 구현 설명·시연 순서](docs/STATEFUL_ASSIGNMENT.md)**
+- [이전 Routing screens 과제](docs/ROUTING_ASSIGNMENT.md)
 - [아키텍처](docs/ARCHITECTURE.md) · [클래스 계약](docs/CLASS_DESIGN.md)
 - [실행 검증과 한계](docs/VALIDATION.md)
 - Flutter **3.44.0 이상**, Dart **3.12.0 이상** 필요
@@ -28,6 +29,8 @@
 | 회원가입 | `lib/screens/signup_screen.dart` | 이름, 나이, 아이디, 비밀번호 입력 |
 | 메인 틀 | `lib/screens/home_shell.dart` | 하단 탭 4개 (운동선택 / Plan / 운동분석 / AI) |
 | 운동선택 | `lib/screens/sport_select_screen.dart` | ⊕로 선호 운동 여러 개 선택 → 버튼으로 표시 |
+| 운동 선택창 | `lib/screens/sport_picker_sheet.dart` | 검색·다중 선택·선택 개수, 완료 시 반영·취소 시 폐기 |
+| 알림 설정 | `lib/screens/notification_settings_screen.dart` | 상단 종 아이콘 → 종류·시점·방해금지 설정, 저장·변경 취소 |
 | 위치 입력 | `lib/screens/location_screen.dart` | 운동별 자주 가는 위치 저장, 선택 시 운동분석 탭으로 이동 |
 | 운동분석 | `lib/screens/analysis_screen.dart` | 날씨(기온·습도·바람·강수·미세먼지), 요일별 지수 색상, 운동지수, AI 조언 |
 | Week Plan | `lib/screens/plan_screen.dart` | 운동×요일 적합도 표(O/△/X), 요일별 추천 일정 |
@@ -57,6 +60,7 @@ flutter run
 ## 현재 단계 / 다음 단계
 
 - 날씨 데이터와 AI 답변은 **더미 데이터**입니다.
+- 알림은 **설정 UI 시연**입니다. 실제 발송·권한 요청은 없으며, 설정은 사용자 ID별로 앱 실행 중에만 유지됩니다.
 - TODO: 날씨 API 연결 (`AppState.weatherFor`), LLM API 연결 (`AiChatScreen._askAi`, `AnalysisScreen._advice`), 로그인 정보 저장(persistence)
 
 # cau_mobileprogramming

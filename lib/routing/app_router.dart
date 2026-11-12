@@ -7,6 +7,7 @@ import '../screens/analysis_screen.dart';
 import '../screens/home_shell.dart';
 import '../screens/location_screen.dart';
 import '../screens/login_screen.dart';
+import '../screens/notification_settings_screen.dart';
 import '../screens/plan_screen.dart';
 import '../screens/route_error_screen.dart';
 import '../screens/signup_screen.dart';
@@ -102,6 +103,11 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.notifications,
+        builder: (context, state) =>
+            NotificationSettingsScreen(key: ValueKey(app.loginId)),
       ),
     ],
   );

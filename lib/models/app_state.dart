@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart'; // ThemeMode 때문에 foundation → material
 
 import 'weather.dart';
+import 'notification_preferences.dart';
 
 /// 앱 전체가 공유하는 상태 (5강: ChangeNotifier + Provider 패턴)
 ///
@@ -57,6 +58,21 @@ class AppState extends ChangeNotifier {
   void logout() {
     _loginId.value = null;
     notifyListeners();
+  }
+
+  final Map<String, NotificationPreferences> _notificationSettings = {};
+
+  NotificationPreferences get notificationPreferences =>
+      _notificationSettings[loginId] ?? NotificationPreferences();
+
+  bool saveNotificationPreferences(
+    String userId,
+    NotificationPreferences preferences,
+  ) {
+    if (loginId != userId) return false;
+    _notificationSettings[userId] = preferences;
+    notifyListeners();
+    return true;
   }
 
   // ───────────────────────── 테마 (라이트/다크) ─────────────────────────
@@ -148,7 +164,9 @@ class AppState extends ChangeNotifier {
 
   /// 해당 운동의 요일별 점수 (저장된 첫 번째 위치 기준). 위치가 없으면 null.
   List<int>? weeklyScores(String sport, {String? location}) {
-    final loc = location ?? (locationsOf(sport).isEmpty ? null : locationsOf(sport).first);
+    final loc =
+        location ??
+        (locationsOf(sport).isEmpty ? null : locationsOf(sport).first);
     if (loc == null) return null;
     return List.generate(7, (day) => scoreFor(sport, weatherFor(loc, day)));
   }

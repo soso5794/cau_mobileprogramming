@@ -6,6 +6,7 @@ import '../models/app_state.dart';
 import '../routing/app_routes.dart';
 import '../models/sport_icons.dart';
 import '../theme/app_theme.dart';
+import 'sport_picker_sheet.dart';
 
 /// PDF 3페이지: 선호 운동 선택 화면 (하단 탭 0번)
 /// ① 로그인 후 등장, 큰 ⊕ 버튼
@@ -17,79 +18,11 @@ class SportSelectScreen extends StatelessWidget {
   /// ② 선호 운동 체크 목록을 바텀시트로 띄운다. [4강 showModalBottomSheet]
   Future<void> _openPicker(BuildContext context) async {
     final app = context.read<AppState>();
-    // 바텀시트 안에서만 쓰는 임시 선택값 (완료를 눌러야 AppState에 반영)
-    final temp = <String>{...app.selectedSports};
-
     final result = await showModalBottomSheet<List<String>>(
       context: context,
-      builder: (sheetContext) {
-        // 바텀시트 안의 체크 상태를 바꾸려면 자체 setState가 필요 → StatefulBuilder
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 바텀시트 위쪽 손잡이(handle) 모양
-                  Container(
-                    margin: const EdgeInsets.only(top: 12),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade400,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('선호하는 운동을 모두 골라주세요',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  ),
-                  // 운동이 늘어나도 넘치지 않도록 Flexible + ListView
-                  Flexible(
-                    child: ListView(
-                      shrinkWrap: true,
-                      children: [
-                        for (final sport in AppState.allSports)
-                          CheckboxListTile(
-                            // 운동마다 고유 색의 동그라미 아이콘
-                            secondary: CircleAvatar(
-                              backgroundColor: sportColor(sport).withAlpha(40),
-                              child: Icon(sportIcon(sport), color: sportColor(sport)),
-                            ),
-                            title: Text(sport,
-                                style: const TextStyle(fontWeight: FontWeight.w600)),
-                            activeColor: sportColor(sport),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            value: temp.contains(sport),
-                            onChanged: (checked) => setSheetState(() {
-                              checked! ? temp.add(sport) : temp.remove(sport);
-                            }),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        // 선택 순서를 allSports 순서로 정렬해서 돌려준다
-                        onPressed: () => Navigator.pop(
-                          sheetContext,
-                          AppState.allSports.where(temp.contains).toList(),
-                        ),
-                        child: const Text('완료'),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => SportPickerSheet(initialSelection: app.selectedSports),
     );
 
     if (context.mounted && result != null) app.setSelectedSports(result);
@@ -116,11 +49,15 @@ class SportSelectScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ───── 인사 문구 ─────
-          Text('${app.userName ?? ''}님, 안녕하세요!',
-              style: text.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            '${app.userName ?? ''}님, 안녕하세요!',
+            style: text.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 2),
-          Text('좋아하는 운동을 고르고 자주 가는 장소를 등록하세요.',
-              style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+          Text(
+            '좋아하는 운동을 고르고 자주 가는 장소를 등록하세요.',
+            style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+          ),
           const SizedBox(height: 16),
 
           // ───── ① 큰 ⊕ 버튼 (그라데이션 배너) ─────
@@ -147,23 +84,37 @@ class SportSelectScreen extends StatelessWidget {
                           color: Colors.white.withAlpha(60),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(Icons.add_rounded, color: Colors.white, size: 32),
+                        child: const Icon(
+                          Icons.add_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('선호 운동 추가 / 수정',
-                                style: text.titleMedium?.copyWith(
-                                    color: Colors.white, fontWeight: FontWeight.bold)),
-                            Text('지금 ${sports.length}개 선택됨',
-                                style: text.bodySmall
-                                    ?.copyWith(color: Colors.white.withAlpha(220))),
+                            Text(
+                              '선호 운동 추가 / 수정',
+                              style: text.titleMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '지금 ${sports.length}개 선택됨',
+                              style: text.bodySmall?.copyWith(
+                                color: Colors.white.withAlpha(220),
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded, color: Colors.white),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.white,
+                      ),
                     ],
                   ),
                 ),
@@ -208,11 +159,17 @@ class _EmptyHint extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.directions_run_rounded, size: 72, color: scheme.outlineVariant),
+          Icon(
+            Icons.directions_run_rounded,
+            size: 72,
+            color: scheme.outlineVariant,
+          ),
           const SizedBox(height: 12),
-          Text('위의 ⊕ 버튼을 눌러\n선호 운동을 골라주세요.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: scheme.onSurfaceVariant)),
+          Text(
+            '위의 ⊕ 버튼을 눌러\n선호 운동을 골라주세요.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: scheme.onSurfaceVariant),
+          ),
         ],
       ),
     );
@@ -250,9 +207,14 @@ class _SportButton extends StatelessWidget {
                 child: Icon(sportIcon(sport), color: Colors.white, size: 30),
               ),
               const Spacer(),
-              Text(sport,
-                  style: TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+              Text(
+                sport,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
               const SizedBox(height: 4),
               // 위치 개수 알약
               Container(
@@ -266,9 +228,14 @@ class _SportButton extends StatelessWidget {
                   children: [
                     Icon(Icons.place_outlined, size: 14, color: color),
                     const SizedBox(width: 2),
-                    Text(count == 0 ? '위치 등록하기' : '저장된 위치 $count곳',
-                        style: TextStyle(
-                            fontSize: 12, color: color, fontWeight: FontWeight.w600)),
+                    Text(
+                      count == 0 ? '위치 등록하기' : '저장된 위치 $count곳',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: color,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),

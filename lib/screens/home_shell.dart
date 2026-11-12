@@ -35,10 +35,17 @@ class HomeShell extends StatelessWidget {
         backgroundColor: Colors.transparent, // 배경색과 자연스럽게 이어지도록
         scrolledUnderElevation: 0,
         actions: [
+          IconButton(
+            tooltip: '알림 설정',
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => context.push(AppRoutes.notifications),
+          ),
           // [10강] 다크모드 토글: 버튼 하나로 앱 전체 테마 전환
           IconButton(
             tooltip: isDark ? '라이트 모드' : '다크 모드',
-            icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+            icon: Icon(
+              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+            ),
             onPressed: () => context.read<AppState>().toggleTheme(),
           ),
           IconButton(

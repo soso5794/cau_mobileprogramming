@@ -6,6 +6,7 @@ abstract final class AppRoutes {
   static const plan = '/plan';
   static const analysis = '/analysis';
   static const ai = '/ai';
+  static const notifications = '/settings/notifications';
 
   static const signupName = 'signup';
   static const locationsName = 'locations';
@@ -33,7 +34,7 @@ abstract final class AppRoutes {
         value.contains('\\')) {
       return null;
     }
-    if ([sports, plan, analysis, ai].contains(uri.path) ||
+    if ([sports, plan, analysis, ai, notifications].contains(uri.path) ||
         RegExp(r'^/sports/[^/]+/locations$').hasMatch(uri.path)) {
       return uri.toString();
     }
