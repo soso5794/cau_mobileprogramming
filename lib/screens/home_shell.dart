@@ -5,91 +5,98 @@ import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../routing/app_routes.dart';
 
-/// 로그인 후의 메인 틀.
-/// PDF 모든 화면 하단에 있는 동그라미 4개(운동선택 / plan / 운동분석 / AI)
-///
-/// [꾸미기] BottomNavigationBar → Material 3의 NavigationBar로 교체.
-/// 선택된 탭 아이콘 뒤에 알약 모양 배경(indicator)이 생기고, 선택 시 채워진 아이콘으로 바뀐다.
+/// 앱 전체에서 유지되는 5개 기본 탭: 홈·매치·지도·랭킹·내정보.
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
-  // 탭 순서는 PDF 그림 순서 그대로: 운동선택, plan, 운동분석, AI
-  static const _titles = ['운동 선택', 'Week Plan', '운동 분석', 'AI 운동 도우미'];
+  static const _titles = ['운동 Assist', '매치', '지도', '랭킹', '내정보'];
+  static const _destinations = [
+    NavigationDestination(
+      icon: Icon(Icons.home_outlined),
+      selectedIcon: Icon(Icons.home_rounded),
+      label: '홈',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.groups_outlined),
+      selectedIcon: Icon(Icons.groups_rounded),
+      label: '매치',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.map_outlined),
+      selectedIcon: Icon(Icons.map_rounded),
+      label: '지도',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.emoji_events_outlined),
+      selectedIcon: Icon(Icons.emoji_events_rounded),
+      label: '랭킹',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.person_outline_rounded),
+      selectedIcon: Icon(Icons.person_rounded),
+      label: '내정보',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    // 현재 URL의 branch가 선택 탭을 결정한다.
     final app = context.watch<AppState>();
     final index = navigationShell.currentIndex;
     final isDark = app.themeMode == ThemeMode.dark;
+    final currentPath = GoRouter.of(
+      context,
+    ).routeInformationProvider.value.uri.path;
+    final isFeaturePage = [
+      '/me/plan',
+      '/me/analysis',
+      '/me/ai',
+    ].contains(currentPath);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _titles[index],
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: false,
-        backgroundColor: Colors.transparent, // 배경색과 자연스럽게 이어지도록
-        scrolledUnderElevation: 0,
-        actions: [
-          IconButton(
-            tooltip: '알림 설정',
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => context.push(AppRoutes.notifications),
-          ),
-          // [10강] 다크모드 토글: 버튼 하나로 앱 전체 테마 전환
-          IconButton(
-            tooltip: isDark ? '라이트 모드' : '다크 모드',
-            icon: Icon(
-              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+      appBar: isFeaturePage
+          ? null
+          : AppBar(
+              title: Text(
+                _titles[index],
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+              centerTitle: false,
+              backgroundColor: Colors.transparent,
+              scrolledUnderElevation: 0,
+              actions: [
+                if (app.members.profile?.isDemo == true)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6),
+                    child: Text('DEMO'),
+                  ),
+                if (index == 4)
+                  IconButton(
+                    tooltip: '설정',
+                    onPressed: () => context.push(AppRoutes.settings),
+                    icon: const Icon(Icons.settings_outlined),
+                  ),
+                IconButton(
+                  tooltip: isDark ? '라이트 모드' : '다크 모드',
+                  icon: Icon(
+                    isDark
+                        ? Icons.light_mode_outlined
+                        : Icons.dark_mode_outlined,
+                  ),
+                  onPressed: () => context.read<AppState>().toggleTheme(),
+                ),
+                const SizedBox(width: 5),
+              ],
             ),
-            onPressed: () => context.read<AppState>().toggleTheme(),
-          ),
-          IconButton(
-            tooltip: '로그아웃',
-            icon: const Icon(Icons.logout_rounded),
-            onPressed: () {
-              context.read<AppState>().logout();
-              context.go(AppRoutes.login);
-            },
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      // 각 탭의 Navigator와 입력/스크롤 상태를 유지한다.
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
-        // [5강] 이벤트 핸들러 안에서는 watch가 아니라 read
         onDestinationSelected: (i) => navigationShell.goBranch(
           i,
           initialLocation: i == navigationShell.currentIndex,
         ),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.sports_basketball_outlined),
-            selectedIcon: Icon(Icons.sports_basketball),
-            label: '운동선택',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'Plan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
-            label: '운동분석',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.smart_toy_outlined),
-            selectedIcon: Icon(Icons.smart_toy),
-            label: 'AI',
-          ),
-        ],
+        destinations: _destinations,
       ),
     );
   }

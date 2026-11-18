@@ -1,67 +1,64 @@
+# 운동 Assist · 한상민 회원 기능
 
-# 운동 Assist 🏃
+2026-11-17 Notion 팀 데모 ZIP을 기준으로 로그인·회원가입·내정보를 구현한 Flutter 프로토타입입니다. 기존 OUTIME 프로젝트(`exerciseapp/`)와는 별도 앱입니다.
 
-날씨 기반 운동 지수 + 주간 운동 계획 + AI 운동 도우미 앱 (모바일프로그래밍 팀 프로젝트)
+## 이번 추가 기능: 캘린더 + 실제 AI API 연결
 
-## 팀원 GitHub ID
-
-- [CircusHan](https://github.com/CircusHan)
-
-## 이번 주 제출: Stateful widgets
-
-이전 Routing screens 제출을 바탕으로 `StatefulWidget`을 활용한 **알림 설정**과
-**검색 가능한 운동 선택창**을 추가했습니다. 사용자의 입력에 따라 `setState()`로
-화면을 갱신하고, 임시 변경과 저장된 데이터를 구분합니다. 기존 4개 탭과 URL 라우팅은 유지합니다.
-
-- **[Stateful widgets 구현 설명·시연 순서](docs/STATEFUL_ASSIGNMENT.md)**
-- [이전 Routing screens 과제](docs/ROUTING_ASSIGNMENT.md)
-- [아키텍처](docs/ARCHITECTURE.md) · [클래스 계약](docs/CLASS_DESIGN.md)
-- [실행 검증과 한계](docs/VALIDATION.md)
-- Flutter **3.44.0 이상**, Dart **3.12.0 이상** 필요
-- 이미지/폰트 assets 미사용 (`assets/` 불필요)
-- 팀 저장소를 **2026년 12월 25일까지 public**으로 유지해야 합니다.
-
-## 화면 구성
-
-| 화면 | 파일 | 설명 |
-|---|---|---|
-| 로그인 | `lib/screens/login_screen.dart` | 아이디/비밀번호 입력, 새로가입·로그인 버튼 |
-| 회원가입 | `lib/screens/signup_screen.dart` | 이름, 나이, 아이디, 비밀번호 입력 |
-| 메인 틀 | `lib/screens/home_shell.dart` | 하단 탭 4개 (운동선택 / Plan / 운동분석 / AI) |
-| 운동선택 | `lib/screens/sport_select_screen.dart` | ⊕로 선호 운동 여러 개 선택 → 버튼으로 표시 |
-| 운동 선택창 | `lib/screens/sport_picker_sheet.dart` | 검색·다중 선택·선택 개수, 완료 시 반영·취소 시 폐기 |
-| 알림 설정 | `lib/screens/notification_settings_screen.dart` | 상단 종 아이콘 → 종류·시점·방해금지 설정, 저장·변경 취소 |
-| 위치 입력 | `lib/screens/location_screen.dart` | 운동별 자주 가는 위치 저장, 선택 시 운동분석 탭으로 이동 |
-| 운동분석 | `lib/screens/analysis_screen.dart` | 날씨(기온·습도·바람·강수·미세먼지), 요일별 지수 색상, 운동지수, AI 조언 |
-| Week Plan | `lib/screens/plan_screen.dart` | 운동×요일 적합도 표(O/△/X), 요일별 추천 일정 |
-| AI 도우미 | `lib/screens/ai_chat_screen.dart` | 운동 질문 챗봇 (현재 더미 응답) |
-
-공유 데이터는 `lib/models/app_state.dart` (ChangeNotifier + Provider), 화면 이동은 `lib/routing/app_router.dart`가 관리합니다.
-
-
-## 디자인 (2차 제출: Widget Decoration)
-
-- `lib/theme/app_theme.dart` 에서 앱 전체 테마를 한 곳에 정의
-  - `ColorScheme.fromSeed` (브랜드 파랑 `#1E6BFF`), 라이트/다크 테마, 버튼·슬라이더·스낵바 컴포넌트 테마
-  - 공통 위젯: `SectionCard`(둥근 카드 + 그림자), `SectionTitle`, `appInputDecoration`(둥근 입력칸)
-  - `ScoreColors`: 운동지수 색 (좋음 초록 / 보통 주황 / 나쁨 빨강)
-- 운동별 대표 색 (`sportColor`) — 운동 버튼, 표, 추천 일정에 통일 적용
-- 다크모드 토글 (상단 AppBar 버튼)
-- 애니메이션: 점수 게이지 `TweenAnimationBuilder`, 요일 선택 `AnimatedContainer`
-- 화면별: 로그인 그라데이션 배경, NavigationBar(M3), 채팅 말풍선 꼬리 + 추천 질문 칩
+- **마이페이지 캘린더**: 월 이동·오늘·날짜별 일정 표시, 일정 추가/수정/삭제, 운동 완료, 시간 겹침 확인. 제목/종목/날짜/시간/운동 시간/장소/메모를 계정별로 저장합니다. 기존 계정도 그대로 불러옵니다.
+- **AI 운동 도우미**: 더미 응답을 제거하고 OpenAI Responses API를 호출하는 로컬 Node 서버와 연결했습니다. 대화 기록·로딩·재시도·새 대화를 지원합니다.
+- 사용자가 API 키 입력을 나중에 하기로 했으므로 **실제 OpenAI 답변은 아직 미검증**입니다. 키가 없으면 설정 안내를 표시합니다.
+- AI 실행에는 앱 외에 `server/`에서 `npm start`가 필요합니다. [서버 설정 방법](server/README.md)을 확인하세요.
 
 ## 실행
 
-```bash
+검증 환경: Flutter 3.47.4 / Dart 3.13.3. 최소 버전은 `pubspec.yaml`을 따릅니다.
+
+```sh
+cd exercise-assist-team
 flutter pub get
-flutter run
+flutter run -d chrome
+# 또는 Android 에뮬레이터/기기를 연결한 뒤
+flutter run -d emulator-5554
 ```
 
-## 현재 단계 / 다음 단계
+Android Studio/VS Code에서는 **이 폴더를 프로젝트 루트로 열고 `lib/main.dart`를 실행**하세요. Android SDK 경로는 개발 환경에 맞게 설정됩니다. ZIP에 개인 PC의 `android/local.properties`는 포함하지 않습니다.
 
-- 날씨 데이터와 AI 답변은 **더미 데이터**입니다.
-- 알림은 **설정 UI 시연**입니다. 실제 발송·권한 요청은 없으며, 설정은 사용자 ID별로 앱 실행 중에만 유지됩니다.
-- TODO: 날씨 API 연결 (`AppState.weatherFor`), LLM API 연결 (`AiChatScreen._askAi`, `AnalysisScreen._advice`), 로그인 정보 저장(persistence)
+빠른 시연: 로그인 → **DEMO 계정으로 둘러보기** → 농구 / 러닝 / 축구 계정 → 하단 **내정보**.
+새 계정 시연: 회원가입 → 공통 질문 → 선택한 종목 질문 → 자기소개 → 완료. **나중에**를 선택하면 내정보에서 다시 설정할 수 있습니다.
 
-# cau_mobileprogramming
-mobileprogramming assignment
+## 구현한 기능
+
+- 이메일·비밀번호 로그인, 비밀번호 표시 전환, 로그인 유지, 재실행 시 세션 복원, 로그아웃.
+- 회원가입 입력 검증, 중복 이메일·닉네임 검사, 비밀번호 확인, 로컬 프로토타입 안내 확인.
+- 가입과 분리된 단계별 운동 프로필. 성별·나이·키는 선택 사항. 활동 지역·장소·시간대·목적과 마지막 자기소개.
+- 농구: 빈도·시간, 실력, 선수 경험/경력, 포지션, 국적, 경기 형태.
+- 러닝: 빈도·시간, 페이스, 거리, 워치 종류.
+- 축구: 빈도·시간, 실력, 선수 경험/경력, 주발, 축구/풋살, 주·부포지션.
+- 내정보: 프로필 수정, 종목별 정보/티어 상태, 즐겨찾기, 내 팀, 팀 신청 상태. 새 계정에는 가짜 팀·티어를 부여하지 않습니다.
+- 설정: 알림 종류별 선호, 일정 알림 시점, 방해금지 시간, 다크 모드, 로그아웃.
+- 수정 초안과 저장 값 분리, 취소 확인, 저장 실패 표시, 보호된 경로의 로그인 복귀.
+- 기존 홈·매치·지도·랭킹·내정보의 5개 탭과 기존 운동 도구 연결 유지.
+
+## 프로토타입 범위
+
+계정·프로필·즐겨찾기·알림 선호는 **현재 기기의 앱 저장소**에 저장됩니다. 웹에서는 같은 브라우저·주소에서만 복원됩니다. 비밀번호는 임의 salt와 PBKDF2-HMAC-SHA256(600,000회) 검증값으로 보관하지만, 로컬 저장소는 운영용 인증이나 암호화된 개인정보 저장소가 아닙니다. 시연용 이메일/비밀번호를 사용하세요.
+
+- **서버 인증, 이메일 인증/비밀번호 재설정 메일, 실제 푸시 발송은 미연동**입니다. 재설정 화면은 이 제한을 안내하며 발송 성공을 가장하지 않습니다.
+- DEMO 계정의 팀·티어·신청 내역은 시연 데이터입니다. 신청 취소도 기기 안에서만 반영됩니다. 선수 경험은 자기 신고이며 인증된 실력이 아닙니다.
+- 알림 설정은 저장되지만 OS 알림 권한이나 예약 발송은 수행하지 않습니다.
+- 테마와 기존 운동 장소 목록은 기존 메모리 상태를 유지합니다. 장소 목록은 계정 전환 시 초기화되며, 가입 설문에 입력한 주 활동 지역·장소는 계정에 저장됩니다.
+- 기존 날씨·매칭·지도·랭킹의 데모 동작은 유지합니다. AI 도우미는 별도 로컬 서버를 통해 실제 API를 요청하며, 실시간 날씨나 코트 점유 데이터를 조회하지 않습니다.
+- 모바일 플랫폼은 원본에 포함된 Android 기준이며 iOS 프로젝트는 추가하지 않았습니다.
+
+## 구조와 협업
+
+`lib/members/`에 회원 모델, 저장소, 컨트롤러, 질문/설정 화면을 분리했습니다. `lib/models/app_state.dart`는 기존 화면과 회원 상태를 연결합니다. 상세 요구사항·경로·연동 지점은 [구현 문서](docs/MEMBER_IMPLEMENTATION.md)를 확인하세요.
+
+```sh
+flutter analyze
+flutter test
+flutter build web --release
+flutter build apk --debug
+```
+
+GitHub 업로드나 기존 저장소 main 병합은 이 작업에서 수행하지 않았습니다. 팀에는 전체 소스 ZIP을 공유하거나 변경 패치를 11/17 원본에 적용할 수 있습니다. 변경 패치는 원본의 `lib/`, `test/`, `pubspec.yaml` 위치를 기준으로 합니다.

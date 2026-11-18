@@ -1,146 +1,134 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
-import '../routing/app_routes.dart';
-import '../theme/app_theme.dart';
+import '../members/member_models.dart';
+import '../members/member_widgets.dart';
 
-/// PDF 2페이지 ③: 새로가입 클릭 시 → 회원정보 입력 (이름, 나이, 아이디, 비밀번호)
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
-
   @override
   State<SignupScreen> createState() => _SignupScreenState();
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  // [3강] Form + GlobalKey<FormState> 로 여러 입력칸을 한 번에 검사(validate)
-  final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _age = TextEditingController();
-  final _id = TextEditingController();
-  final _pw = TextEditingController();
-
+  final _form = GlobalKey<FormState>();
+  final _name = TextEditingController(),
+      _email = TextEditingController(),
+      _password = TextEditingController(),
+      _confirm = TextEditingController();
+  bool _obscure = true, _agreed = false;
+  String? _agreementError;
   @override
   void dispose() {
-    _name.dispose();
-    _age.dispose();
-    _id.dispose();
-    _pw.dispose();
+    for (final c in [_name, _email, _password, _confirm]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return; // 하나라도 틀리면 중단
-
-    final ok = context.read<AppState>().register(
-          name: _name.text.trim(),
-          age: int.parse(_age.text.trim()),
-          id: _id.text.trim(),
-          password: _pw.text,
-        );
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미 사용 중인 아이디입니다.')),
-      );
-      return;
-    }
-    // [4강] pop으로 값을 돌려준다 → 로그인 화면의 await가 이 아이디를 받는다.
-    if (context.canPop()) {
-      context.pop(_id.text.trim());
-    } else {
-      _backToLogin();
-    }
+  Future<void> submit() async {
+    final valid = _form.currentState!.validate();
+    setState(() => _agreementError = _agreed ? null : '프로토타입 이용 안내를 확인해주세요.');
+    if (!valid || !_agreed) return;
+    await context.read<AppState>().members.signUp(
+      _name.text,
+      _email.text,
+      _password.text,
+      _agreed,
+    );
   }
-
-  void _backToLogin() {
-    context.go(Uri(
-      path: AppRoutes.login,
-      queryParameters: AppRoutes.returnQuery(
-        GoRouterState.of(context).uri.queryParameters['from'],
-      ),
-    ).toString());
-  }
-
-  String? _required(String? v) =>
-      (v == null || v.trim().isEmpty) ? '필수 입력 항목입니다.' : null;
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      // 직접 URL로 들어온 경우에도 로그인으로 돌아갈 수 있다.
-      appBar: AppBar(
-        leading: BackButton(onPressed: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            _backToLogin();
-          }
-        }),
-        title: const Text('회원가입'),
-        backgroundColor: Colors.transparent,
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+    final vm = context.watch<AppState>().members;
+    return MemberPage(
+      title: '회원가입',
+      child: Form(
+        key: _form,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('반가워요! 👋',
-                style: text.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text('운동 추천을 위해 기본 정보를 알려주세요.',
-                style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
-            const SizedBox(height: 20),
-            SectionCard(
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _name,
-                    decoration: appInputDecoration(context,
-                        label: '이름', icon: Icons.badge_outlined),
-                    validator: _required,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _age,
-                    decoration: appInputDecoration(context,
-                        label: '나이', icon: Icons.cake_outlined),
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      if (_required(v) != null) return _required(v);
-                      final n = int.tryParse(v!.trim());
-                      if (n == null || n <= 0 || n > 120) return '올바른 나이를 입력해주세요.';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _id,
-                    decoration: appInputDecoration(context,
-                        label: '아이디', icon: Icons.person_outline),
-                    validator: _required,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _pw,
-                    obscureText: true,
-                    decoration: appInputDecoration(context,
-                        label: '비밀번호 (4자 이상)', icon: Icons.lock_outline),
-                    validator: (v) =>
-                        (v == null || v.length < 4) ? '비밀번호는 4자 이상이어야 합니다.' : null,
-                  ),
-                ],
+            const MemberHeading('계정을 만들어볼까요?', '계정을 만든 뒤 운동 프로필을 설정해요.'),
+            TextFormField(
+              key: const Key('signup-name'),
+              controller: _name,
+              validator: MemberValidation.nickname,
+              decoration: memberInput(
+                '닉네임',
+                hint: '크루에게 보여줄 이름',
+                error: vm.errorField == 'nickname' ? vm.error : null,
               ),
             ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _submit,
-              icon: const Icon(Icons.check_rounded),
-              label: const Text('가입하기'),
+            const SizedBox(height: 16),
+            TextFormField(
+              key: const Key('signup-email'),
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              validator: MemberValidation.email,
+              decoration: memberInput(
+                '이메일',
+                error: vm.errorField == 'email' ? vm.error : null,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              key: const Key('signup-password'),
+              controller: _password,
+              obscureText: _obscure,
+              validator: MemberValidation.password,
+              decoration: memberInput(
+                '비밀번호',
+                hint: '영문·숫자 포함 8자 이상',
+                suffix: IconButton(
+                  tooltip: '비밀번호 표시 전환',
+                  onPressed: () => setState(() => _obscure = !_obscure),
+                  icon: Icon(
+                    _obscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              key: const Key('signup-confirm'),
+              controller: _confirm,
+              obscureText: _obscure,
+              validator: (v) => v == _password.text && v!.isNotEmpty
+                  ? null
+                  : '비밀번호가 일치하지 않아요.',
+              decoration: memberInput('비밀번호 확인'),
+            ),
+            const SizedBox(height: 20),
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  '학습용 로컬 프로토타입입니다. 입력 정보는 이 기기에 저장되며 서버 계정 생성이나 이메일 인증은 진행하지 않아요. 실제 개인정보와 다른 곳에서 쓰는 비밀번호는 입력하지 마세요.',
+                ),
+              ),
+            ),
+            CheckboxListTile(
+              key: const Key('signup-agreement'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('프로토타입 이용·기기 저장 안내를 확인했어요'),
+              value: _agreed,
+              onChanged: (v) => setState(() => _agreed = v!),
+            ),
+            if (_agreementError != null)
+              Text(
+                _agreementError!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            if (vm.errorField != 'nickname' && vm.errorField != 'email')
+              MemberError(vm),
+            const SizedBox(height: 16),
+            FilledButton(
+              key: const Key('signup-submit'),
+              onPressed: vm.busy ? null : submit,
+              child: Text(vm.busy ? '계정 만드는 중…' : '계정 만들기'),
             ),
           ],
         ),

@@ -1,19 +1,37 @@
 /// 화면 주소와 종목 URL 식별자를 한 곳에서 관리한다.
 abstract final class AppRoutes {
+  static const demo = '/demo';
+  static const reset = '/password-reset';
+  static const onboarding = '/onboarding';
+  static const editProfile = '/me/edit';
+  static const settings = '/me/settings';
+  static const notifications = '/me/settings/notifications';
+  static const teams = '/me/teams';
+  static const applications = '/me/applications';
   static const login = '/login';
   static const signup = '/signup';
-  static const sports = '/sports';
+  static const sports = '/sports'; // 홈
+  static const match = '/match';
+  static const map = '/map';
+  static const ranking = '/ranking';
+  static const me = '/me';
+
+  // 기존 기능 경로는 하위 페이지로 유지한다.
   static const plan = '/plan';
   static const analysis = '/analysis';
   static const ai = '/ai';
-  static const notifications = '/settings/notifications';
+  static const planPage = '/me/plan';
+  static const analysisPage = '/me/analysis';
+  static const aiPage = '/me/ai';
 
   static const signupName = 'signup';
   static const locationsName = 'locations';
+  static const setupName = 'sport-setup';
 
   static const sportLabels = {
     'basketball': '농구',
     'running': '런닝',
+    'soccer': '축구',
     'sailing': '요트',
     'hiking': '등산',
     'kayaking': '카약',
@@ -34,8 +52,26 @@ abstract final class AppRoutes {
         value.contains('\\')) {
       return null;
     }
-    if ([sports, plan, analysis, ai, notifications].contains(uri.path) ||
-        RegExp(r'^/sports/[^/]+/locations$').hasMatch(uri.path)) {
+    const staticPaths = [
+      sports,
+      match,
+      map,
+      ranking,
+      me,
+      plan,
+      analysis,
+      ai,
+      planPage,
+      analysisPage,
+      aiPage,
+      editProfile,
+      settings,
+      notifications,
+      teams,
+      applications,
+    ];
+    if (staticPaths.contains(uri.path) ||
+        RegExp(r'^/sports/[^/]+/(locations|setup)$').hasMatch(uri.path)) {
       return uri.toString();
     }
     return null;
