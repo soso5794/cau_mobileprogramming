@@ -7,6 +7,7 @@ import '../ai/ai_gateway.dart';
 import '../members/member_controller.dart';
 import '../members/member_repository.dart';
 import '../members/member_store.dart';
+import '../weather/weather_service.dart';
 
 /// 앱 전체가 공유하는 상태 (5강: ChangeNotifier + Provider 패턴)
 ///
@@ -26,15 +27,20 @@ class AppState extends ChangeNotifier {
   ];
   static const List<String> weekdays = ['월', '화', '수', '목', '금', '토', '일'];
 
-  AppState({MemberController? members, AiGateway? aiGateway})
-    : aiGateway = aiGateway ?? HttpAiGateway(),
-      members =
-          members ??
-          MemberController(MemberRepository(store: MemoryMemberStore())) {
+  AppState({
+    MemberController? members,
+    AiGateway? aiGateway,
+    WeatherService? weatherService,
+  }) : aiGateway = aiGateway ?? HttpAiGateway(),
+       weatherService = weatherService ?? OpenMeteoWeatherService(),
+       members =
+           members ??
+           MemberController(MemberRepository(store: MemoryMemberStore())) {
     this.members.addListener(_memberChanged);
   }
   final MemberController members;
   final AiGateway aiGateway;
+  final WeatherService weatherService;
   final ValueNotifier<String> _auth = ValueNotifier('');
   String? _previousId;
   String? get loginId => members.profile?.id;
@@ -57,6 +63,7 @@ class AppState extends ChangeNotifier {
     members.removeListener(_memberChanged);
     members.dispose();
     aiGateway.close();
+    weatherService.close();
     _auth.dispose();
     super.dispose();
   }

@@ -23,6 +23,7 @@ abstract final class AppRoutes {
   static const planPage = '/me/plan';
   static const analysisPage = '/me/analysis';
   static const aiPage = '/me/ai';
+  static const weatherPage = '/me/weather';
 
   static const signupName = 'signup';
   static const locationsName = 'locations';
@@ -64,6 +65,7 @@ abstract final class AppRoutes {
       planPage,
       analysisPage,
       aiPage,
+      weatherPage,
       editProfile,
       settings,
       notifications,

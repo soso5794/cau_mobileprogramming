@@ -52,6 +52,7 @@ class HomeShell extends StatelessWidget {
       '/me/plan',
       '/me/analysis',
       '/me/ai',
+      AppRoutes.weatherPage,
     ].contains(currentPath);
 
     return Scaffold(
@@ -66,6 +67,12 @@ class HomeShell extends StatelessWidget {
               backgroundColor: Colors.transparent,
               scrolledUnderElevation: 0,
               actions: [
+                if (index == 0)
+                  IconButton(
+                    tooltip: '실시간 운동 날씨',
+                    onPressed: () => context.go(AppRoutes.weatherPage),
+                    icon: const Icon(Icons.cloud_outlined),
+                  ),
                 if (app.members.profile?.isDemo == true)
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 6),

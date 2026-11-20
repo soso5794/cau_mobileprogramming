@@ -1,4 +1,25 @@
-# 운동 Assist · 한상민 회원 기능
+# 운동 Assist · HTTP 통신 과제
+
+이번 제출은 **HTTP 방식**으로 구현했습니다. 앱이 Open-Meteo에 HTTPS GET 요청을 보내 현재 날씨와 24시간 예보 JSON을 받아 화면과 종목별 운동 환경지수를 갱신합니다. **별도 API 키나 Node 서버 없이 날씨 기능을 시연할 수 있습니다.**
+
+- 제출 브랜치: `assignment/http-communication_sangmin`
+- [과제 요구사항·시연 순서·구현 설명](docs/HTTP_ASSIGNMENT.md)
+- [검증 결과](docs/HTTP_VALIDATION.md)
+- 필수 제출 파일: `lib/`, `pubspec.yaml`. 별도 Flutter 이미지/폰트 asset을 사용하지 않아 `assets/`는 필요하지 않습니다.
+- 저장소는 **2026년 12월 25일까지 공개 상태로 유지**합니다.
+
+## 가장 빠른 시연
+
+로그인 화면 → **DEMO 계정으로 둘러보기** → 농구 계정 → 홈 상단 **구름 아이콘(실시간 운동 날씨)**. 내정보의 **실시간 운동 날씨** 메뉴에서도 열 수 있습니다.
+
+1. 현재 날씨와 선택 시간의 예보·환경지수를 확인합니다.
+2. 장소를 잠실 또는 부산으로 바꾸면 새 HTTP 요청을 보냅니다.
+3. 농구/런닝/축구, 시간대를 바꾸어 지수와 산정 이유를 비교합니다.
+4. 새로고침으로 다시 조회합니다. 인터넷 연결을 끊고 새로고침하면 오류와 재시도 버튼을 확인할 수 있습니다.
+
+기존 주간 계획·운동 분석은 **DEMO**로 표시되며 새 실시간 날씨 화면과 구분됩니다. 기존 AI 채팅은 별도 OpenAI 키와 서버가 필요한 다른 기능입니다.
+
+## 이전 제출과의 관계
 
 2026-11-17 Notion 팀 데모 ZIP을 기준으로 로그인·회원가입·내정보를 구현한 Flutter 프로토타입입니다. 기존 OUTIME 프로젝트(`exerciseapp/`)와는 별도 앱입니다.
 
@@ -14,9 +35,10 @@
 검증 환경: Flutter 3.47.4 / Dart 3.13.3. 최소 버전은 `pubspec.yaml`을 따릅니다.
 
 ```sh
-cd exercise-assist-team
+git clone --branch assignment/http-communication_sangmin https://github.com/soso5794/cau_mobileprogramming.git
+cd cau_mobileprogramming
 flutter pub get
-flutter run -d chrome
+flutter run -d chrome --web-port 7363
 # 또는 Android 에뮬레이터/기기를 연결한 뒤
 flutter run -d emulator-5554
 ```
@@ -47,7 +69,7 @@ Android Studio/VS Code에서는 **이 폴더를 프로젝트 루트로 열고 `l
 - DEMO 계정의 팀·티어·신청 내역은 시연 데이터입니다. 신청 취소도 기기 안에서만 반영됩니다. 선수 경험은 자기 신고이며 인증된 실력이 아닙니다.
 - 알림 설정은 저장되지만 OS 알림 권한이나 예약 발송은 수행하지 않습니다.
 - 테마와 기존 운동 장소 목록은 기존 메모리 상태를 유지합니다. 장소 목록은 계정 전환 시 초기화되며, 가입 설문에 입력한 주 활동 지역·장소는 계정에 저장됩니다.
-- 기존 날씨·매칭·지도·랭킹의 데모 동작은 유지합니다. AI 도우미는 별도 로컬 서버를 통해 실제 API를 요청하며, 실시간 날씨나 코트 점유 데이터를 조회하지 않습니다.
+- 실시간 운동 날씨는 실제 HTTP 응답을 사용합니다. 기존 주간 계획·운동 분석, 매칭·지도·랭킹은 데모입니다. AI 도우미는 별도 로컬 서버를 사용하며 날씨 데이터를 자동 전달하지 않습니다. 코트 점유·예약 상태는 조회하지 않습니다.
 - 모바일 플랫폼은 원본에 포함된 Android 기준이며 iOS 프로젝트는 추가하지 않았습니다.
 
 ## 구조와 협업
@@ -61,4 +83,6 @@ flutter build web --release
 flutter build apk --debug
 ```
 
-GitHub 업로드나 기존 저장소 main 병합은 이 작업에서 수행하지 않았습니다. 팀에는 전체 소스 ZIP을 공유하거나 변경 패치를 11/17 원본에 적용할 수 있습니다. 변경 패치는 원본의 `lib/`, `test/`, `pubspec.yaml` 위치를 기준으로 합니다.
+현재 제출본은 `assignment/http-communication_sangmin` 브랜치를 기준으로 합니다. 기존 main/팀원 브랜치와 분리해 검토할 수 있습니다.
+
+추가 검증: `dart run tool/check_weather_api.dart`는 실제 앱과 같은 클라이언트/파서로 Open-Meteo를 조회합니다. [Open-Meteo API 문서](https://open-meteo.com/en/docs), [Flutter HTTP 가이드](https://docs.flutter.dev/cookbook/networking/fetch-data)를 참고했습니다. 날씨 데이터 출처: Open-Meteo, CC BY 4.0.

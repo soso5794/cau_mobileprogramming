@@ -106,6 +106,14 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             WorkoutCalendar(key: ValueKey('calendar-${p.id}')),
+            const SizedBox(height: 16),
+            menu(
+              context,
+              Icons.cloud_outlined,
+              '실시간 운동 날씨',
+              '장소별 현재 날씨·24시간 예보·종목별 환경지수',
+              AppRoutes.weatherPage,
+            ),
             const SizedBox(height: 24),
             menu(
               context,

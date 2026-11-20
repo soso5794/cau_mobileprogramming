@@ -21,6 +21,7 @@ import '../screens/route_error_screen.dart';
 import '../screens/signup_screen.dart';
 import '../screens/sport_select_screen.dart';
 import '../screens/sport_setup_screen.dart';
+import '../weather/live_weather_screen.dart';
 import 'app_routes.dart';
 
 GoRouter createAppRouter(AppState app, {String? initialLocation}) {
@@ -184,16 +185,26 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
                 builder: (context, state) => const ProfileScreen(),
                 routes: [
                   GoRoute(
+                    path: 'weather',
+                    builder: (context, state) => FeaturePage(
+                      title: '실시간 운동 날씨',
+                      child: LiveWeatherScreen(
+                        key: ValueKey(app.loginId),
+                        service: app.weatherService,
+                      ),
+                    ),
+                  ),
+                  GoRoute(
                     path: 'plan',
                     builder: (context, state) => const FeaturePage(
-                      title: '주간 운동 계획',
+                      title: '주간 계획 · DEMO',
                       child: PlanScreen(),
                     ),
                   ),
                   GoRoute(
                     path: 'analysis',
                     builder: (context, state) => const FeaturePage(
-                      title: '운동 분석',
+                      title: '운동 분석 · DEMO',
                       child: AnalysisScreen(),
                     ),
                   ),
