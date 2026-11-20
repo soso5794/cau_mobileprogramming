@@ -2,7 +2,8 @@
 
 이번 제출은 **HTTP 방식**으로 구현했습니다. 앱이 Open-Meteo에 HTTPS GET 요청을 보내 현재 날씨와 24시간 예보 JSON을 받아 화면과 종목별 운동 환경지수를 갱신합니다. **별도 API 키나 Node 서버 없이 날씨 기능을 시연할 수 있습니다.**
 
-- 제출 브랜치: `assignment/http-communication_sangmin`
+- 제출 기준: 기본 브랜치 `main`
+- 작업 브랜치: `assignment/http-communication_sangmin` (이력 보관)
 - [과제 요구사항·시연 순서·구현 설명](docs/HTTP_ASSIGNMENT.md)
 - [검증 결과](docs/HTTP_VALIDATION.md)
 - 필수 제출 파일: `lib/`, `pubspec.yaml`. 별도 Flutter 이미지/폰트 asset을 사용하지 않아 `assets/`는 필요하지 않습니다.
@@ -35,7 +36,7 @@
 검증 환경: Flutter 3.47.4 / Dart 3.13.3. 최소 버전은 `pubspec.yaml`을 따릅니다.
 
 ```sh
-git clone --branch assignment/http-communication_sangmin https://github.com/soso5794/cau_mobileprogramming.git
+git clone https://github.com/soso5794/cau_mobileprogramming.git
 cd cau_mobileprogramming
 flutter pub get
 flutter run -d chrome --web-port 7363
@@ -83,6 +84,6 @@ flutter build web --release
 flutter build apk --debug
 ```
 
-현재 제출본은 `assignment/http-communication_sangmin` 브랜치를 기준으로 합니다. 기존 main/팀원 브랜치와 분리해 검토할 수 있습니다.
+제출본은 기본 브랜치 `main`에서 확인할 수 있습니다. 그룹 저장소 주소 https://github.com/soso5794/cau_mobileprogramming 를 제출하세요. 작업 브랜치 `assignment/http-communication_sangmin`은 이력 확인용으로 보관합니다.
 
 추가 검증: `dart run tool/check_weather_api.dart`는 실제 앱과 같은 클라이언트/파서로 Open-Meteo를 조회합니다. [Open-Meteo API 문서](https://open-meteo.com/en/docs), [Flutter HTTP 가이드](https://docs.flutter.dev/cookbook/networking/fetch-data)를 참고했습니다. 날씨 데이터 출처: Open-Meteo, CC BY 4.0.

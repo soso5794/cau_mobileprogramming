@@ -15,14 +15,14 @@
 | `assets/` (사용한 경우) | 별도 Flutter asset 미사용. 아이콘은 Material Icons 사용 |
 | 공개 GitHub 저장소 | `soso5794/cau_mobileprogramming`, 2026-12-25까지 Public 유지 |
 
-제출 브랜치: **`assignment/http-communication_sangmin`**
+제출 기준: **기본 브랜치 `main`**
+
+작업 브랜치 `assignment/http-communication_sangmin`은 개발 이력 확인용으로 보관한다.
 
 제출 링크:
-https://github.com/soso5794/cau_mobileprogramming/tree/assignment/http-communication_sangmin
-
-저장소 기본 URL을 요구하면 아래 저장소 주소와 함께 브랜치 이름을 제출란에 적는다. 기본 브랜치 main만 열 경우 이번 HTTP 기능이 보이지 않으므로, 해당 브랜치 링크를 반드시 함께 제공한다.
-
 https://github.com/soso5794/cau_mobileprogramming
+
+이번 HTTP 과제 코드는 기본 브랜치 main에 포함된다. 따라서 그룹 저장소 주소를 제출하면 README, lib/, pubspec.yaml과 과제 안내를 바로 확인할 수 있다.
 
 ## 기능 설명
 
@@ -91,7 +91,7 @@ Flutter HTTP 구현 가이드: https://docs.flutter.dev/cookbook/networking/fetc
 ## 실행 및 2~3분 시연
 
 ```sh
-git clone --branch assignment/http-communication_sangmin https://github.com/soso5794/cau_mobileprogramming.git
+git clone https://github.com/soso5794/cau_mobileprogramming.git
 cd cau_mobileprogramming
 flutter pub get
 flutter run -d chrome --web-port 7363
@@ -111,4 +111,4 @@ flutter run -d chrome --web-port 7363
 
 ## 제출란에 붙여 넣을 설명
 
-> 이전 Stateful Widgets 앱을 확장해 Open-Meteo 날씨 API에 HTTPS GET 요청을 보내는 기능을 구현했습니다. JSON 응답을 모델로 변환하여 현재 날씨와 24시간 예보를 표시하고, 종목·시간별 운동 환경지수를 계산합니다. 로딩, 오류, 타임아웃, 재시도와 장소 변경을 지원합니다. lib/와 pubspec.yaml을 포함했으며 별도 assets는 사용하지 않았습니다. 실행 후 DEMO 계정 → 홈의 구름 아이콘에서 확인할 수 있습니다. 제출 브랜치는 assignment/http-communication_sangmin이며 저장소는 12월 25일까지 공개 상태로 유지합니다.
+> 이전 Stateful Widgets 앱을 확장해 Open-Meteo 날씨 API에 HTTPS GET 요청을 보내는 기능을 구현했습니다. JSON 응답을 모델로 변환하여 현재 날씨와 24시간 예보를 표시하고, 종목·시간별 운동 환경지수를 계산합니다. 로딩, 오류, 타임아웃, 재시도와 장소 변경을 지원합니다. lib/와 pubspec.yaml을 포함했으며 별도 assets는 사용하지 않았습니다. 실행 후 DEMO 계정 → 홈의 구름 아이콘에서 확인할 수 있습니다. 기본 브랜치 main에 과제 코드를 포함했으며 저장소는 12월 25일까지 공개 상태로 유지합니다.
