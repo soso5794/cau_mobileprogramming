@@ -310,7 +310,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                           children: [
                             Icon(Icons.auto_awesome_rounded, size: 18, color: scheme.primary),
                             const SizedBox(width: 4),
-                            Text('AI 조언',
+                            Text('규칙 기반 조언',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold, color: scheme.primary)),
                           ],

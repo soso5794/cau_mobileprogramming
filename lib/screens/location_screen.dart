@@ -141,7 +141,7 @@ class _LocationScreenState extends State<LocationScreen> {
                             // 직접 URL 진입도 동일한 분석 화면으로 연결한다.
                             onTap: () {
                               context.read<AppState>().selectTarget(sport, loc);
-                              context.go(AppRoutes.analysis);
+                              context.go(AppRoutes.analysisPage);
                             },
                             ),
                           ),

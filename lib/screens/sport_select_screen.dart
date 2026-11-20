@@ -6,7 +6,6 @@ import '../models/app_state.dart';
 import '../routing/app_routes.dart';
 import '../models/sport_icons.dart';
 import '../theme/app_theme.dart';
-import 'sport_picker_sheet.dart';
 
 /// PDF 3페이지: 선호 운동 선택 화면 (하단 탭 0번)
 /// ① 로그인 후 등장, 큰 ⊕ 버튼
@@ -18,22 +17,107 @@ class SportSelectScreen extends StatelessWidget {
   /// ② 선호 운동 체크 목록을 바텀시트로 띄운다. [4강 showModalBottomSheet]
   Future<void> _openPicker(BuildContext context) async {
     final app = context.read<AppState>();
+    // 바텀시트 안에서만 쓰는 임시 선택값 (완료를 눌러야 AppState에 반영)
+    final temp = <String>{...app.selectedSports};
+
     final result = await showModalBottomSheet<List<String>>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => SportPickerSheet(initialSelection: app.selectedSports),
+      builder: (sheetContext) {
+        // 바텀시트 안의 체크 상태를 바꾸려면 자체 setState가 필요 → StatefulBuilder
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 바텀시트 위쪽 손잡이(handle) 모양
+                  Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      '선호하는 운동을 모두 골라주세요',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  // 운동이 늘어나도 넘치지 않도록 Flexible + ListView
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final sport in AppState.allSports)
+                          CheckboxListTile(
+                            // 운동마다 고유 색의 동그라미 아이콘
+                            secondary: CircleAvatar(
+                              backgroundColor: sportColor(sport).withAlpha(40),
+                              child: Icon(
+                                sportIcon(sport),
+                                color: sportColor(sport),
+                              ),
+                            ),
+                            title: Text(
+                              sport,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            activeColor: sportColor(sport),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            value: temp.contains(sport),
+                            onChanged: (checked) => setSheetState(() {
+                              checked! ? temp.add(sport) : temp.remove(sport);
+                            }),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        // 선택 순서를 allSports 순서로 정렬해서 돌려준다
+                        onPressed: () => Navigator.pop(
+                          sheetContext,
+                          AppState.allSports.where(temp.contains).toList(),
+                        ),
+                        child: const Text('완료'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
 
-    if (context.mounted && result != null) app.setSelectedSports(result);
+    if (context.mounted && result != null) {
+      final ok = await app.setSelectedSports(result);
+      if (!ok && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(app.members.error ?? '잠시 후 다시 시도해주세요.')),
+        );
+      }
+    }
   }
 
-  /// 종목을 URL 매개변수로 전달한다. 상세 뒤로 가기는 운동 선택으로 돌아온다.
-  void _openLocation(BuildContext context, String sport) {
-    context.goNamed(
-      AppRoutes.locationsName,
-      pathParameters: {'sport': AppRoutes.sportId(sport)},
-    );
+  /// 관심 운동 카드를 누르면 해당 종목의 질문·설정 흐름으로 이동한다.
+  void _openSetup(BuildContext context, String sport) {
+    context.go('/sports/${AppRoutes.sportId(sport)}/setup');
   }
 
   @override
@@ -55,7 +139,7 @@ class SportSelectScreen extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            '좋아하는 운동을 고르고 자주 가는 장소를 등록하세요.',
+            '관심 있는 운동을 선택하고 나에게 맞는 활동 방식을 설정하세요.',
             style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
@@ -96,7 +180,7 @@ class SportSelectScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '선호 운동 추가 / 수정',
+                              '관심 운동 선택 / 수정',
                               style: text.titleMedium?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -136,7 +220,7 @@ class SportSelectScreen extends StatelessWidget {
                       for (final sport in sports)
                         _SportButton(
                           sport: sport,
-                          onTap: () => _openLocation(context, sport),
+                          onTap: () => _openSetup(context, sport),
                         ),
                     ],
                   ),
@@ -166,7 +250,7 @@ class _EmptyHint extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '위의 ⊕ 버튼을 눌러\n선호 운동을 골라주세요.',
+            '위의 ⊕ 버튼을 눌러\n관심 운동을 골라주세요.',
             textAlign: TextAlign.center,
             style: TextStyle(color: scheme.onSurfaceVariant),
           ),
@@ -186,7 +270,9 @@ class _SportButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final count = context.watch<AppState>().locationsOf(sport).length;
+    final state = context.watch<AppState>();
+    final count = state.locationsOf(sport).length;
+    final configured = state.hasPreference(sport);
     final color = sportColor(sport);
 
     return Material(
@@ -229,7 +315,9 @@ class _SportButton extends StatelessWidget {
                     Icon(Icons.place_outlined, size: 14, color: color),
                     const SizedBox(width: 2),
                     Text(
-                      count == 0 ? '위치 등록하기' : '저장된 위치 $count곳',
+                      configured
+                          ? '운동 설정 완료'
+                          : (count == 0 ? '눌러서 운동 설정하기' : '저장된 장소 $count곳'),
                       style: TextStyle(
                         fontSize: 12,
                         color: color,

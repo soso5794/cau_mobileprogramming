@@ -3,7 +3,11 @@ import 'dart:math';
 import 'package:flutter/material.dart'; // ThemeMode 때문에 foundation → material
 
 import 'weather.dart';
-import 'notification_preferences.dart';
+import '../ai/ai_gateway.dart';
+import '../members/member_controller.dart';
+import '../members/member_repository.dart';
+import '../members/member_store.dart';
+import '../weather/weather_service.dart';
 
 /// 앱 전체가 공유하는 상태 (5강: ChangeNotifier + Provider 패턴)
 ///
@@ -12,67 +16,56 @@ import 'notification_preferences.dart';
 /// 값을 바꾼 뒤에는 반드시 notifyListeners()를 불러야 화면이 다시 그려진다.
 class AppState extends ChangeNotifier {
   // ───────────────────────── 상수 ─────────────────────────
-  static const List<String> allSports = ['농구', '런닝', '요트', '등산', '카약', '자전거'];
+  static const List<String> allSports = [
+    '농구',
+    '런닝',
+    '축구',
+    '요트',
+    '등산',
+    '카약',
+    '자전거',
+  ];
   static const List<String> weekdays = ['월', '화', '수', '목', '금', '토', '일'];
 
-  // ───────────────────────── 회원 ─────────────────────────
-  final Map<String, String> _passwords = {}; // 아이디 -> 비밀번호
-  final Map<String, String> _names = {}; // 아이디 -> 이름
-  final ValueNotifier<String?> _loginId = ValueNotifier(null);
-  String? get loginId => _loginId.value;
-  Listenable get authChanges => _loginId;
+  AppState({
+    MemberController? members,
+    AiGateway? aiGateway,
+    WeatherService? weatherService,
+  }) : aiGateway = aiGateway ?? HttpAiGateway(),
+       weatherService = weatherService ?? OpenMeteoWeatherService(),
+       members =
+           members ??
+           MemberController(MemberRepository(store: MemoryMemberStore())) {
+    this.members.addListener(_memberChanged);
+  }
+  final MemberController members;
+  final AiGateway aiGateway;
+  final WeatherService weatherService;
+  final ValueNotifier<String> _auth = ValueNotifier('');
+  String? _previousId;
+  String? get loginId => members.profile?.id;
+  String? get userName => members.profile?.nickname;
+  Listenable get authChanges => _auth;
+  void _memberChanged() {
+    if (_previousId != loginId) {
+      currentSport = null;
+      currentLocation = null;
+      _locations.clear();
+      _previousId = loginId;
+    }
+    _auth.value = '$loginId:${members.profile?.onboarding}';
+    notifyListeners();
+  }
 
+  Future<bool> logout() => members.logout();
   @override
   void dispose() {
-    _loginId.dispose();
+    members.removeListener(_memberChanged);
+    members.dispose();
+    aiGateway.close();
+    weatherService.close();
+    _auth.dispose();
     super.dispose();
-  }
-
-  String? get userName => loginId == null ? null : (_names[loginId] ?? loginId);
-
-  /// 회원가입. 이미 있는 아이디면 false.
-  bool register({
-    required String name,
-    required int age,
-    required String id,
-    required String password,
-  }) {
-    if (_passwords.containsKey(id)) return false;
-    _passwords[id] = password;
-    _names[id] = name;
-    // age는 지금은 저장만 하고 쓰지 않음 (나중에 운동 추천 개인화에 사용 가능)
-    notifyListeners();
-    return true;
-  }
-
-  /// 로그인. 가입된 아이디면 비밀번호를 확인하고,
-  /// 아직 서버/DB가 없으므로 가입 안 된 아이디는 데모용으로 통과시킨다.
-  bool login(String id, String password) {
-    if (id.isEmpty || password.isEmpty) return false;
-    if (_passwords.containsKey(id) && _passwords[id] != password) return false;
-    _loginId.value = id;
-    notifyListeners();
-    return true;
-  }
-
-  void logout() {
-    _loginId.value = null;
-    notifyListeners();
-  }
-
-  final Map<String, NotificationPreferences> _notificationSettings = {};
-
-  NotificationPreferences get notificationPreferences =>
-      _notificationSettings[loginId] ?? NotificationPreferences();
-
-  bool saveNotificationPreferences(
-    String userId,
-    NotificationPreferences preferences,
-  ) {
-    if (loginId != userId) return false;
-    _notificationSettings[userId] = preferences;
-    notifyListeners();
-    return true;
   }
 
   // ───────────────────────── 테마 (라이트/다크) ─────────────────────────
@@ -85,19 +78,35 @@ class AppState extends ChangeNotifier {
   }
 
   // ───────────────────────── 선호 운동 ─────────────────────────
-  final List<String> _selectedSports = [];
-  List<String> get selectedSports => List.unmodifiable(_selectedSports);
-
-  void setSelectedSports(List<String> sports) {
-    _selectedSports
-      ..clear()
-      ..addAll(sports);
-    // 선택 해제된 운동이 현재 운동이면 초기화
-    if (currentSport != null && !_selectedSports.contains(currentSport)) {
+  List<String> get selectedSports => members.profile?.sports ?? const [];
+  Future<bool> setSelectedSports(List<String> sports) async {
+    final p = members.profile;
+    if (p == null) return false;
+    final saved = await members.save(
+      p.copyWith(
+        sports: sports,
+        favorites: p.favorites.intersection(sports.toSet()),
+      ),
+    );
+    if (saved && !sports.contains(currentSport)) {
       currentSport = null;
       currentLocation = null;
+      notifyListeners();
     }
-    notifyListeners();
+    return saved;
+  }
+
+  Map<String, String> preferenceOf(String sport) =>
+      members.profile?.answers[sport] ?? const {};
+  bool hasPreference(String sport) =>
+      members.profile?.answers.containsKey(sport) ?? false;
+  Future<bool> saveSportPreference(
+    String sport,
+    Map<String, String> answers,
+  ) async {
+    final p = members.profile;
+    if (p == null) return false;
+    return members.save(p.copyWith(answers: {...p.answers, sport: answers}));
   }
 
   // ───────────────────────── 운동별 자주 가는 위치 ─────────────────────────

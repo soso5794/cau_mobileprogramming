@@ -7,6 +7,8 @@ IconData sportIcon(String sport) {
       return Icons.sports_basketball;
     case '런닝':
       return Icons.directions_run;
+    case '축구':
+      return Icons.sports_soccer;
     case '요트':
       return Icons.sailing;
     case '등산':
@@ -26,7 +28,9 @@ Color sportColor(String sport) {
     case '농구':
       return const Color(0xFFFF7A1A); // 농구공 주황
     case '런닝':
-      return const Color(0xFF1E6BFF); // 파랑
+      return const Color(0xFF16824A); // 러닝 그린
+    case '축구':
+      return const Color(0xFF0D8A70); // 축구 그린
     case '요트':
       return const Color(0xFF0EA5E9); // 바다 하늘색
     case '등산':

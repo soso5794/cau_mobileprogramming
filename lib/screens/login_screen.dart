@@ -3,183 +3,132 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
+import '../members/member_models.dart';
+import '../members/member_widgets.dart';
 import '../routing/app_routes.dart';
-import '../theme/app_theme.dart';
 
-/// PDF 2페이지: 로그인 페이지
-/// ① 아이디 입력 ② 비밀번호 입력 ③ 새로가입 → 회원정보 입력 화면 ④ 로그인 버튼
-///
-/// [꾸미기] 파랑→청록 그라데이션 배경 위에 흰 카드가 떠 있는 구조.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
-
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // [3강] TextField의 값을 읽으려면 TextEditingController를 쓴다.
-  final _idController = TextEditingController();
-  final _pwController = TextEditingController();
-  bool _obscure = true; // 비밀번호 보이기/숨기기
-
+  final _form = GlobalKey<FormState>();
+  final _email = TextEditingController(), _password = TextEditingController();
+  bool _obscure = true, _remember = true;
   @override
   void dispose() {
-    // [5강] State가 들고 있는 컨트롤러는 dispose에서 정리 (메모리 누수 방지)
-    _idController.dispose();
-    _pwController.dispose();
+    _email.dispose();
+    _password.dispose();
     super.dispose();
   }
 
-  void _login() {
-    final ok = context.read<AppState>().login(
-          _idController.text.trim(),
-          _pwController.text,
-        );
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('아이디와 비밀번호를 확인해주세요.')),
-      );
-      return;
-    }
-    // AppState 알림에 따라 라우터가 원래 목적지(또는 운동 선택)로 이동한다.
-  }
-
-  Future<void> _goSignup() async {
-    // 회원가입 결과를 받아 아이디를 채운다. 로그인 전 목적지도 유지한다.
-    final newId = await context.pushNamed<String>(
-      AppRoutes.signupName,
-      queryParameters: AppRoutes.returnQuery(
-        GoRouterState.of(context).uri.queryParameters['from'],
-      ),
+  String target(String path) => Uri(
+    path: path,
+    queryParameters: AppRoutes.returnQuery(
+      GoRouterState.of(context).uri.queryParameters['from'],
+    ),
+  ).toString();
+  Future<void> submit() async {
+    if (!_form.currentState!.validate()) return;
+    await context.read<AppState>().members.login(
+      _email.text,
+      _password.text,
+      _remember,
     );
-    if (!mounted) return; // await 뒤에는 화면이 아직 살아있는지 확인
-    if (newId is String) {
-      _idController.text = newId;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$newId 님, 가입이 완료되었습니다. 로그인 해주세요!')),
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-
-    return Scaffold(
-      body: Container(
-        // 화면 전체 그라데이션 배경
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppTheme.gradientStart, AppTheme.gradientEnd],
-          ),
-        ),
-        child: SafeArea(
-          // 키보드가 올라와도 화면이 넘치지(overflow) 않도록 스크롤 가능하게 감싼다.
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                // 웹/태블릿에서 너무 넓게 퍼지지 않도록 최대 폭 제한
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // ───── 로고 ─────
-                    Container(
-                      width: 84,
-                      height: 84,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(50), // 반투명 흰 원
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.check_rounded, size: 56, color: Colors.white),
+    final vm = context.watch<AppState>().members;
+    return MemberPage(
+      title: '운동 Assist',
+      child: AutofillGroup(
+        child: Form(
+          key: _form,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(
+                Icons.sports_basketball_rounded,
+                size: 56,
+                color: Color(0xFF075B3D),
+              ),
+              const SizedBox(height: 24),
+              const MemberHeading('함께 뛰는 일상', '나에게 맞는 운동 메이트를 만나보세요.'),
+              const Text('로컬 프로토타입 · 실제 서비스 계정과 다른 이메일/비밀번호를 사용하세요.'),
+              const SizedBox(height: 24),
+              TextFormField(
+                key: const Key('login-email'),
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.username],
+                textInputAction: TextInputAction.next,
+                validator: MemberValidation.email,
+                decoration: memberInput('이메일'),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                key: const Key('login-password'),
+                controller: _password,
+                obscureText: _obscure,
+                autofillHints: const [AutofillHints.password],
+                onFieldSubmitted: (_) => submit(),
+                validator: (v) => (v ?? '').isEmpty ? '비밀번호를 입력해주세요.' : null,
+                decoration: memberInput(
+                  '비밀번호',
+                  error: vm.errorField == 'password' ? vm.error : null,
+                  suffix: IconButton(
+                    tooltip: _obscure ? '비밀번호 표시' : '비밀번호 숨기기',
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                    icon: Icon(
+                      _obscure
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                     ),
-                    const SizedBox(height: 16),
-                    Text.rich(
-                      // Text.rich: 한 줄 안에서 글자마다 다른 스타일
-                      TextSpan(children: [
-                        const TextSpan(text: '운동 '),
-                        TextSpan(
-                          text: 'Assist',
-                          style: const TextStyle(fontStyle: FontStyle.italic).copyWith(
-                            color: const Color(0xFFD9FF5B), // 형광 라임 포인트
-                          ),
-                        ),
-                      ]),
-                      textAlign: TextAlign.center,
-                      style: text.displaySmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '날씨를 읽고, 오늘의 운동을 추천해요',
-                      textAlign: TextAlign.center,
-                      style: text.bodyLarge?.copyWith(color: Colors.white.withAlpha(220)),
-                    ),
-                    const SizedBox(height: 36),
-
-                    // ───── 입력 카드 ─────
-                    SectionCard(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text('로그인',
-                              style: text.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          const Text('데모 로그인 · 실제 계정 인증이 아닙니다.'),
-                          const SizedBox(height: 16),
-                          // ① 아이디
-                          TextField(
-                            controller: _idController,
-                            decoration: appInputDecoration(context,
-                                label: '아이디', icon: Icons.person_outline),
-                            textInputAction: TextInputAction.next,
-                          ),
-                          const SizedBox(height: 12),
-                          // ② 비밀번호 (눈 아이콘으로 보이기/숨기기)
-                          TextField(
-                            controller: _pwController,
-                            obscureText: _obscure,
-                            decoration: appInputDecoration(
-                              context,
-                              label: '비밀번호',
-                              icon: Icons.lock_outline,
-                              suffix: IconButton(
-                                icon: Icon(_obscure
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined),
-                                onPressed: () => setState(() => _obscure = !_obscure),
-                              ),
-                            ),
-                            onSubmitted: (_) => _login(),
-                          ),
-                          const SizedBox(height: 20),
-                          // ④ 로그인
-                          FilledButton(onPressed: _login, child: const Text('로그인')),
-                          const SizedBox(height: 8),
-                          // ③ 새로가입
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('아직 회원이 아니신가요?', style: text.bodyMedium),
-                              TextButton(onPressed: _goSignup, child: const Text('새로가입')),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('로그인 상태 유지'),
+                value: _remember,
+                onChanged: (v) => setState(() => _remember = v!),
+              ),
+              if (vm.errorField != 'password') MemberError(vm),
+              FilledButton(
+                key: const Key('login-submit'),
+                onPressed: vm.busy ? null : submit,
+                child: Text(vm.busy ? '로그인 중…' : '로그인'),
+              ),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                children: [
+                  TextButton(
+                    onPressed: vm.busy
+                        ? null
+                        : () => context.push(target(AppRoutes.reset)),
+                    child: const Text('비밀번호 재설정'),
+                  ),
+                  TextButton(
+                    onPressed: vm.busy
+                        ? null
+                        : () => context.push(target(AppRoutes.signup)),
+                    child: const Text('회원가입'),
+                  ),
+                ],
+              ),
+              const Divider(height: 32),
+              OutlinedButton.icon(
+                onPressed: vm.busy
+                    ? null
+                    : () => context.push(target(AppRoutes.demo)),
+                icon: const Icon(Icons.science_outlined),
+                label: const Text('DEMO 계정으로 둘러보기'),
+              ),
+            ],
           ),
         ),
       ),

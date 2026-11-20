@@ -9,11 +9,11 @@ class AppTheme {
 
   /// 브랜드 색(seed). 로고의 파란 체크 표시에서 따온 색.
   /// [10강] ColorScheme.fromSeed: 색 하나만 주면 primary/secondary/surface 등 전체 팔레트를 자동으로 만든다.
-  static const Color seed = Color(0xFF1E6BFF);
+  static const Color seed = Color(0xFF075B3D);
 
   /// 로그인 배경 등에 쓰는 그라데이션 색
-  static const Color gradientStart = Color(0xFF1E6BFF);
-  static const Color gradientEnd = Color(0xFF00C2D1);
+  static const Color gradientStart = Color(0xFF075B3D);
+  static const Color gradientEnd = Color(0xFF3A9667);
 
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
@@ -29,7 +29,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       // 배경을 순백 대신 아주 연한 회청색으로 → 흰 카드가 떠 보이는 효과
-      scaffoldBackgroundColor: isDark ? scheme.surface : const Color(0xFFF4F6FB),
+      scaffoldBackgroundColor: isDark ? scheme.surface : const Color(0xFFF5F7F2),
 
       // [10강] 컴포넌트 테마: 앱 안의 모든 FilledButton / OutlinedButton 모양을 한 번에 정한다
       filledButtonTheme: FilledButtonThemeData(
