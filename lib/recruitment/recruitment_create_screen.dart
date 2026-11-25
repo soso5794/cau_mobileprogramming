@@ -53,7 +53,7 @@ class _RecruitmentCreateScreenState extends State<RecruitmentCreateScreen> {
   Future<void> _pickPlace() async {
     FocusScope.of(context).unfocus();
     final chosen = await Navigator.of(context).push<RecruitmentLocation>(MaterialPageRoute(
-      builder: (_) => PlacePickerScreen(initial: _location, initialName: _place.text.trim())));
+      builder: (_) => PlacePickerScreen(initial: _location, initialName: _place.text.trim(), initialSport: _sport)));
     if (!mounted || chosen == null) return;
     setState(() { _location = chosen; _place.text = chosen.name; });
   }
