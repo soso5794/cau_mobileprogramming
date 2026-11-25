@@ -4,6 +4,7 @@ import 'package:flutter/material.dart'; // ThemeMode 때문에 foundation → ma
 
 import 'weather.dart';
 import '../ai/ai_gateway.dart';
+import '../map/location_service.dart';
 import '../members/member_controller.dart';
 import '../members/member_repository.dart';
 import '../members/member_store.dart';
@@ -31,8 +32,10 @@ class AppState extends ChangeNotifier {
     MemberController? members,
     AiGateway? aiGateway,
     WeatherService? weatherService,
+    LocationService? locationService,
   }) : aiGateway = aiGateway ?? HttpAiGateway(),
        weatherService = weatherService ?? OpenMeteoWeatherService(),
+       locationService = locationService ?? const GeolocatorLocationService(),
        members =
            members ??
            MemberController(MemberRepository(store: MemoryMemberStore())) {
@@ -41,6 +44,7 @@ class AppState extends ChangeNotifier {
   final MemberController members;
   final AiGateway aiGateway;
   final WeatherService weatherService;
+  final LocationService locationService; // 지도 탭 "내 위치"
   final ValueNotifier<String> _auth = ValueNotifier('');
   String? _previousId;
   String? get loginId => members.profile?.id;
