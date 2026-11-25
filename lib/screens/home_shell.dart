@@ -5,13 +5,13 @@ import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../routing/app_routes.dart';
 
-/// 앱 전체에서 유지되는 5개 기본 탭: 홈·매치·지도·랭킹·내정보.
+/// 앱 전체에서 유지되는 5개 기본 탭: 홈·커뮤니티·지도·랭킹·내정보.
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
-  static const _titles = ['운동 Assist', '매치', '지도', '랭킹', '내정보'];
+  static const _titles = ['운동 Assist', '커뮤니티', '지도', '랭킹', '내정보'];
   static const _destinations = [
     NavigationDestination(
       icon: Icon(Icons.home_outlined),
@@ -21,7 +21,7 @@ class HomeShell extends StatelessWidget {
     NavigationDestination(
       icon: Icon(Icons.groups_outlined),
       selectedIcon: Icon(Icons.groups_rounded),
-      label: '매치',
+      label: '커뮤니티',
     ),
     NavigationDestination(
       icon: Icon(Icons.map_outlined),

@@ -10,8 +10,13 @@ import 'profile_draft.dart';
 import 'sport_questions.dart';
 
 class ProfileEditorScreen extends StatefulWidget {
-  const ProfileEditorScreen({super.key, this.onboarding = false});
+  const ProfileEditorScreen({
+    super.key,
+    this.onboarding = false,
+    this.managedProfile,
+  });
   final bool onboarding;
+  final MemberProfile? managedProfile;
   @override
   State<ProfileEditorScreen> createState() => _ProfileEditorScreenState();
 }
@@ -22,7 +27,9 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
   @override
   void initState() {
     super.initState();
-    draft = ProfileDraft(context.read<AppState>().members.profile!);
+    draft = ProfileDraft(
+      widget.managedProfile ?? context.read<AppState>().members.profile!,
+    );
   }
 
   @override
@@ -35,7 +42,9 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
     if (context.canPop()) {
       context.pop();
     } else {
-      context.go(AppRoutes.me);
+      context.go(
+        widget.managedProfile == null ? AppRoutes.me : AppRoutes.admin,
+      );
     }
   }
 
@@ -74,8 +83,15 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
   Future<void> save() async {
     if (!draft.validateAll()) return;
     final vm = context.read<AppState>().members;
-    final target = widget.onboarding ? destination : AppRoutes.me;
-    if (await vm.save(draft.value(onboarding: 'complete')) && mounted) {
+    final target = widget.managedProfile != null
+        ? AppRoutes.admin
+        : widget.onboarding
+        ? destination
+        : AppRoutes.me;
+    final saved = widget.managedProfile == null
+        ? await vm.save(draft.value(onboarding: 'complete'))
+        : await vm.saveManagedProfile(draft.value(onboarding: 'complete'));
+    if (saved && mounted) {
       setState(() => _exitAllowed = true);
       context.go(target);
       ScaffoldMessenger.of(
@@ -126,7 +142,13 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
         },
         child: Scaffold(
           appBar: AppBar(
-            title: Text(widget.onboarding ? '운동 프로필 설정' : '프로필 편집'),
+            title: Text(
+              widget.managedProfile != null
+                  ? '회원 프로필 관리'
+                  : widget.onboarding
+                  ? '운동 프로필 설정'
+                  : '프로필 편집',
+            ),
             leading: IconButton(
               tooltip: '뒤로',
               onPressed: exit,

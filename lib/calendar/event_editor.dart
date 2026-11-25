@@ -5,7 +5,13 @@ import '../models/app_state.dart';
 import 'workout_event.dart';
 
 class EventEditor extends StatefulWidget {
-  const EventEditor({super.key, required this.date, this.event});
+  const EventEditor({
+    super.key,
+    required this.date,
+    this.event,
+    this.managedOwnerId,
+  });
+  final String? managedOwnerId;
   final DateTime date;
   final WorkoutEvent? event;
   @override
@@ -23,7 +29,10 @@ class _EventEditorState extends State<EventEditor> {
   @override
   void initState() {
     super.initState();
-    final p = context.read<AppState>().members.profile!;
+    final vm = context.read<AppState>().members;
+    final p = widget.managedOwnerId == null
+        ? vm.profile!
+        : vm.managedMembers.firstWhere((p) => p.id == widget.managedOwnerId);
     owner = p.id;
     final e = widget.event;
     id = e?.id ?? DateTime.now().microsecondsSinceEpoch.toString();
@@ -64,7 +73,10 @@ class _EventEditorState extends State<EventEditor> {
       setState(() => error = issue);
       return;
     }
-    if (vm.profile?.events.any(e.overlaps) == true) {
+    final ownerProfile = widget.managedOwnerId == null
+        ? vm.profile
+        : vm.managedMembers.where((p) => p.id == owner).firstOrNull;
+    if (ownerProfile?.events.any(e.overlaps) == true) {
       final allow = await showDialog<bool>(
         context: context,
         builder: (c) => AlertDialog(
@@ -88,7 +100,9 @@ class _EventEditorState extends State<EventEditor> {
       saving = true;
       error = null;
     });
-    final ok = await vm.saveEvent(e, ownerId: owner);
+    final ok = widget.managedOwnerId == null
+        ? await vm.saveEvent(e, ownerId: owner)
+        : await vm.saveManagedEvent(owner, e);
     if (!mounted) return;
     if (ok) {
       Navigator.pop(context);

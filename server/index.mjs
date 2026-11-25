@@ -1,4 +1,6 @@
 import http from 'node:http';
+import {createAdminAuth, AdminError} from './admin-auth.mjs';
+import {createPasswordReset, ResetError} from './password-reset.mjs';
 import { pathToFileURL } from 'node:url';
 
 const instructions = `너는 운동 Assist의 한국어 운동 도우미다. 사용자의 운동 전술, 기초 훈련, 준비 운동, 야외 운동 대안을 구체적이고 짧게 설명한다.
@@ -25,7 +27,7 @@ export function extractReply(data) {
   if (!text) throw new ApiError(502, 'EMPTY_RESPONSE');
   return text;
 }
-export function createAiServer({ apiKey = process.env.OPENAI_API_KEY ?? '', model = process.env.OPENAI_MODEL || 'gpt-4.1-mini', fetchImpl = fetch, timeoutMs = 45000, maxPerMinute = 20 } = {}) {
+export function createAiServer({ apiKey = process.env.OPENAI_API_KEY ?? '', model = process.env.OPENAI_MODEL || 'gpt-4.1-mini', fetchImpl = fetch, timeoutMs = 45000, maxPerMinute = 20, passwordReset = createPasswordReset(), adminAuth = createAdminAuth() } = {}) {
   let active = 0, used = 0, windowStart = Date.now();
   return http.createServer(async (req, res) => {
     const origin = req.headers.origin;
@@ -38,13 +40,15 @@ export function createAiServer({ apiKey = process.env.OPENAI_API_KEY ?? '', mode
     };
     if (!localHost.test(host) || (origin && !localOrigin.test(origin))) { send(403, {error:'LOCAL_ACCESS_ONLY'}); return; }
     if (origin) { res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin'); }
-    if (req.method === 'OPTIONS' && req.url === '/api/chat') {
+    const adminRoute = ['/api/admin/login', '/api/admin/session', '/api/admin/logout'].includes(req.url);
+    const resetRoute = ['/api/password-reset/request', '/api/password-reset/verify'].includes(req.url);
+    if (req.method === 'OPTIONS' && (req.url === '/api/chat' || resetRoute || adminRoute)) {
       res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       res.writeHead(204); res.end(); return;
     }
-    if (req.method === 'GET' && req.url === '/health') { send(200, {configured: Boolean(apiKey.trim()), model}); return; }
-    if (req.method !== 'POST' || req.url !== '/api/chat') { send(404, {error:'NOT_FOUND'}); return; }
+    if (req.method === 'GET' && req.url === '/health') { send(200, {configured: Boolean(apiKey.trim()), model, mailConfigured: passwordReset.configured, adminConfigured: adminAuth.configured}); return; }
+    if (req.method !== 'POST' || (req.url !== '/api/chat' && !resetRoute && !adminRoute)) { send(404, {error:'NOT_FOUND'}); return; }
     let acquired = false;
     try {
       if (!req.headers['content-type']?.startsWith('application/json')) throw new ApiError(400, 'JSON_REQUIRED');
@@ -57,6 +61,16 @@ export function createAiServer({ apiKey = process.env.OPENAI_API_KEY ?? '', mode
       }
       let data;
       try { data = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new ApiError(400, 'INVALID_JSON'); }
+      if (adminRoute) {
+        const token = req.headers.authorization?.replace(/^Bearer /, '');
+        const result = req.url.endsWith('/login') ? await adminAuth.login(data)
+          : req.url.endsWith('/logout') ? adminAuth.logout(token) : adminAuth.verify(token);
+        send(200, result); return;
+      }
+      if (resetRoute) {
+        const result = req.url.endsWith('/request') ? await passwordReset.request(data) : passwordReset.verify(data);
+        send(200, result); return;
+      }
       const messages = validateMessages(data);
       if (!apiKey.trim()) throw new ApiError(503, 'OPENAI_KEY_REQUIRED');
       if (Date.now() - windowStart >= 60000) { used = 0; windowStart = Date.now(); }
@@ -71,7 +85,7 @@ export function createAiServer({ apiKey = process.env.OPENAI_API_KEY ?? '', mode
       send(200, {reply: extractReply(await result.json()), model});
     } catch (e) {
       const timedOut = e?.name === 'TimeoutError' || e?.name === 'AbortError';
-      send(e instanceof ApiError ? e.status : timedOut ? 504 : 502, {error: e instanceof ApiError ? e.message : timedOut ? 'TIMEOUT' : 'UPSTREAM_UNAVAILABLE'});
+      send((e instanceof ApiError || e instanceof ResetError || e instanceof AdminError) ? e.status : timedOut ? 504 : 502, {error: (e instanceof ApiError || e instanceof ResetError || e instanceof AdminError) ? e.message : timedOut ? 'TIMEOUT' : 'UPSTREAM_UNAVAILABLE'});
     } finally { if (acquired) active--; }
   });
 }

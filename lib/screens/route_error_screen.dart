@@ -25,10 +25,9 @@ class RouteErrorScreen extends StatelessWidget {
               Text(message, textAlign: TextAlign.center),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () => context.go(
-                  signedIn ? AppRoutes.sports : AppRoutes.login,
-                ),
-                child: Text(signedIn ? '운동 선택으로' : '로그인으로'),
+                onPressed: () =>
+                    context.go(signedIn ? AppRoutes.sports : AppRoutes.login),
+                child: Text(signedIn ? '홈으로' : '로그인으로'),
               ),
             ],
           ),

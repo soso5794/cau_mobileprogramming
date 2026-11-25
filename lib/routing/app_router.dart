@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
+import '../admin/admin_screen.dart';
+import '../admin/operator_login_screen.dart';
 import '../members/account_support_screens.dart';
 import '../members/profile_editor_screen.dart';
 import '../members/settings_screen.dart';
@@ -10,6 +13,8 @@ import '../screens/ai_chat_screen.dart';
 import '../screens/analysis_screen.dart';
 import '../screens/feature_page.dart';
 import '../screens/home_shell.dart';
+import '../screens/home_dashboard_screen.dart';
+import '../community/recruitment_card.dart';
 import '../screens/location_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/map_screen.dart';
@@ -33,6 +38,7 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
     refreshListenable: app.authChanges,
     redirect: (context, state) {
       final path = state.uri.path;
+      if (path == AppRoutes.match) return AppRoutes.community;
       if (path == '/' || path == '/home') return AppRoutes.sports;
       // 이전 버전의 링크를 새 하단 메뉴 구조 안으로 연결한다.
       if (path == AppRoutes.plan) return AppRoutes.planPage;
@@ -40,6 +46,7 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
       if (path == AppRoutes.ai) return AppRoutes.aiPage;
 
       final isPublic = [
+        AppRoutes.operatorLogin,
         AppRoutes.login,
         AppRoutes.signup,
         AppRoutes.demo,
@@ -52,6 +59,11 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
         ).toString();
       }
       if (app.loginId != null &&
+          (path == AppRoutes.admin || path.startsWith('/admin/')) &&
+          !app.members.isOperator) {
+        return AppRoutes.me;
+      }
+      if (app.loginId != null &&
           app.members.profile!.onboarding == 'pending' &&
           path != AppRoutes.onboarding) {
         return Uri(
@@ -62,6 +74,9 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
         ).toString();
       }
       if (app.loginId != null && isPublic) {
+        if (app.members.isOperator) {
+          return AppRoutes.admin;
+        }
         return AppRoutes.safeReturnTo(state.uri.queryParameters['from']) ??
             AppRoutes.sports;
       }
@@ -69,6 +84,30 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
     },
     errorBuilder: (context, state) => const RouteErrorScreen(),
     routes: [
+      GoRoute(
+        path: AppRoutes.operatorLogin,
+        builder: (context, state) => const OperatorLoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.admin,
+        builder: (context, state) => const AdminScreen(),
+        routes: [
+          GoRoute(
+            path: 'member/:id',
+            builder: (context, state) {
+              final p = app.members.managedMembers
+                  .where((p) => p.id == state.pathParameters['id'])
+                  .firstOrNull;
+              return p == null
+                  ? const RouteErrorScreen(message: '회원을 찾을 수 없어요.')
+                  : ProfileEditorScreen(
+                      key: ValueKey('managed-${p.id}'),
+                      managedProfile: p,
+                    );
+            },
+          ),
+        ],
+      ),
       GoRoute(path: '/', redirect: (context, state) => AppRoutes.sports),
       GoRoute(path: '/home', redirect: (context, state) => AppRoutes.sports),
       GoRoute(
@@ -118,12 +157,12 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(navigationShell: shell),
         branches: [
-          // 홈: 관심 운동을 고른 뒤 종목을 눌러 개인 설정으로 진입한다.
+          // 홈: 랭킹·개인 일정·관심 종목 추천 모집을 모아 보여준다.
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: AppRoutes.sports,
-                builder: (context, state) => const SportSelectScreen(),
+                builder: (context, state) => const HomeDashboardScreen(),
                 routes: [
                   GoRoute(
                     path: ':sport/setup',
@@ -156,8 +195,37 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.match,
-                builder: (context, state) => const MatchScreen(),
+                path: AppRoutes.community,
+                builder: (context, state) => const SportSelectScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'posts/:id',
+                    parentNavigatorKey: rootKey,
+                    builder: (context, state) {
+                      final post = context
+                          .watch<AppState>()
+                          .members
+                          .operations
+                          .posts
+                          .where((p) => p.id == state.pathParameters['id'])
+                          .firstOrNull;
+                      return post == null
+                          ? const RouteErrorScreen(message: '모집글을 찾을 수 없어요.')
+                          : RecruitmentDetailScreen(post: post);
+                    },
+                  ),
+                  GoRoute(
+                    path: ':sport',
+                    parentNavigatorKey: rootKey,
+                    builder: (context, state) {
+                      final sport =
+                          AppRoutes.sportLabels[state.pathParameters['sport']];
+                      return sport == null
+                          ? const RouteErrorScreen(message: '지원하지 않는 운동 종목이에요.')
+                          : MatchScreen(sport: sport);
+                    },
+                  ),
+                ],
               ),
             ],
           ),

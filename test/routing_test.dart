@@ -18,7 +18,7 @@ void main() {
     await demoLogin(tester);
     expect(router.routeInformationProvider.value.uri.path, '/sports');
     for (final item in {
-      '매치': '/match',
+      '커뮤니티': '/community',
       '지도': '/map',
       '랭킹': '/ranking',
       '내정보': '/me',
@@ -102,7 +102,7 @@ void main() {
       await app.members.useDemo('demo-basketball');
       final router = await openApp(tester, app, location: path);
       expect(find.byType(RouteErrorScreen), findsOneWidget);
-      await tap(tester, find.text('운동 선택으로'));
+      await tap(tester, find.text('홈으로'));
       expect(router.routeInformationProvider.value.uri.path, '/sports');
     });
   }

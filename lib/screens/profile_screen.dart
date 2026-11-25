@@ -66,7 +66,11 @@ class ProfileScreen extends StatelessWidget {
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              p.isDemo ? 'DEMO · 가상 운동 메이트' : '로컬 프로토타입 계정',
+                              vm.isOperator
+                                  ? '운영자 · 관리 권한'
+                                  : p.isDemo
+                                  ? 'DEMO · 가상 운동 메이트'
+                                  : '로컬 프로토타입 계정',
                               style: TextStyle(color: scheme.primary),
                             ),
                           ],
@@ -105,6 +109,16 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
+            if (vm.isOperator) ...[
+              menu(
+                context,
+                Icons.admin_panel_settings_outlined,
+                '운영 관리',
+                '회원정보 · 일정 · 랭킹 · 모집글',
+                AppRoutes.admin,
+              ),
+              const SizedBox(height: 16),
+            ],
             WorkoutCalendar(key: ValueKey('calendar-${p.id}')),
             const SizedBox(height: 16),
             menu(

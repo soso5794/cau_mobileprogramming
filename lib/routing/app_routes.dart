@@ -1,6 +1,8 @@
 /// 화면 주소와 종목 URL 식별자를 한 곳에서 관리한다.
 abstract final class AppRoutes {
   static const demo = '/demo';
+  static const admin = '/admin';
+  static const operatorLogin = '/operator-login';
   static const reset = '/password-reset';
   static const onboarding = '/onboarding';
   static const editProfile = '/me/edit';
@@ -10,8 +12,9 @@ abstract final class AppRoutes {
   static const applications = '/me/applications';
   static const login = '/login';
   static const signup = '/signup';
-  static const sports = '/sports'; // 홈
-  static const match = '/match';
+  static const sports = '/sports'; // 홈 대시보드 (기존 주소 유지)
+  static const match = '/match'; // 이전 링크 호환
+  static const community = '/community';
   static const map = '/map';
   static const ranking = '/ranking';
   static const me = '/me';
@@ -54,8 +57,10 @@ abstract final class AppRoutes {
       return null;
     }
     const staticPaths = [
+      admin,
       sports,
       match,
+      community,
       map,
       ranking,
       me,
@@ -73,7 +78,9 @@ abstract final class AppRoutes {
       applications,
     ];
     if (staticPaths.contains(uri.path) ||
-        RegExp(r'^/sports/[^/]+/(locations|setup)$').hasMatch(uri.path)) {
+        RegExp(r'^/sports/[^/]+/(locations|setup)$').hasMatch(uri.path) ||
+        RegExp(r'^/community/(posts/[^/]+|[^/]+)$').hasMatch(uri.path) ||
+        RegExp(r'^/admin/member/[^/]+$').hasMatch(uri.path)) {
       return uri.toString();
     }
     return null;

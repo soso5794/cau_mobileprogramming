@@ -53,7 +53,8 @@ class AppState extends ChangeNotifier {
       _locations.clear();
       _previousId = loginId;
     }
-    _auth.value = '$loginId:${members.profile?.onboarding}';
+    _auth.value =
+        '$loginId:${members.profile?.onboarding}:${members.isOperator}';
     notifyListeners();
   }
 
