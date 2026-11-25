@@ -42,6 +42,8 @@ abstract final class AppRoutes {
     'cycling': '자전거',
   };
 
+  static String recruitmentCreate(String sport) => '/community/${sportId(sport)}/create';
+
   static String sportId(String label) =>
       sportLabels.entries.firstWhere((entry) => entry.value == label).key;
 
@@ -79,7 +81,7 @@ abstract final class AppRoutes {
     ];
     if (staticPaths.contains(uri.path) ||
         RegExp(r'^/sports/[^/]+/(locations|setup)$').hasMatch(uri.path) ||
-        RegExp(r'^/community/(posts/[^/]+|[^/]+)$').hasMatch(uri.path) ||
+        RegExp(r'^/community/(posts/[^/]+|[^/]+(?:/create)?)$').hasMatch(uri.path) ||
         RegExp(r'^/admin/member/[^/]+$').hasMatch(uri.path)) {
       return uri.toString();
     }

@@ -15,6 +15,7 @@ import '../screens/feature_page.dart';
 import '../screens/home_shell.dart';
 import '../screens/home_dashboard_screen.dart';
 import '../community/recruitment_card.dart';
+import '../recruitment/recruitment_create_screen.dart';
 import '../screens/location_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/map_screen.dart';
@@ -212,6 +213,16 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
                       return post == null
                           ? const RouteErrorScreen(message: '모집글을 찾을 수 없어요.')
                           : RecruitmentDetailScreen(post: post);
+                    },
+                  ),
+                  GoRoute(
+                    path: ':sport/create',
+                    parentNavigatorKey: rootKey,
+                    builder: (context, state) {
+                      final sport = AppRoutes.sportLabels[state.pathParameters['sport']];
+                      return sport == null
+                          ? const RouteErrorScreen(message: '지원하지 않는 운동 종목이에요.')
+                          : RecruitmentCreateScreen(initialSport: sport);
                     },
                   ),
                   GoRoute(

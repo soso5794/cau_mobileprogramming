@@ -1,3 +1,5 @@
+import '../recruitment/recruitment.dart';
+
 /// Shared preview data for home, sport communities and recruitment details.
 class RecruitmentPreview {
   const RecruitmentPreview({
@@ -11,8 +13,16 @@ class RecruitmentPreview {
     required this.description,
     required this.equipment,
     this.isDemo = true,
+    this.authorId,
+    this.recruitmentInput,
+    this.extraConditions = const [],
   });
   final bool isDemo;
+  final String? authorId;
+  final RecruitmentInput? recruitmentInput;
+  final List<String> extraConditions;
+  bool get isMemberPost => authorId != null;
+  String get sourceLabel => isDemo ? '예시 모집' : isMemberPost ? '회원 등록' : '운영자 등록';
   Map<String, Object> toJson() => {
     'id': id,
     'sport': sport,
@@ -24,6 +34,9 @@ class RecruitmentPreview {
     'description': description,
     'equipment': equipment,
     'isDemo': isDemo,
+    if (authorId != null) 'authorId': authorId!,
+    if (recruitmentInput != null) 'recruitmentInput': recruitmentInput!.toJson(),
+    if (extraConditions.isNotEmpty) 'extraConditions': extraConditions,
   };
   factory RecruitmentPreview.fromJson(Map<String, dynamic> j) =>
       RecruitmentPreview(
@@ -37,6 +50,11 @@ class RecruitmentPreview {
         description: j['description'] as String,
         equipment: j['equipment'] as String,
         isDemo: j['isDemo'] as bool? ?? true,
+        authorId: j['authorId'] as String?,
+        recruitmentInput: j['recruitmentInput'] is Map
+            ? RecruitmentInput.fromJson(Map<String, dynamic>.from(j['recruitmentInput'] as Map))
+            : null,
+        extraConditions: List<String>.from(j['extraConditions'] as List? ?? []),
       );
   String? validate() {
     if (![

@@ -181,7 +181,7 @@ class _AdminScreenState extends State<AdminScreen> {
                         children: [
                           TextButton(
                             key: Key('admin-post-${post.id}'),
-                            onPressed: vm.busy ? null : () => postEditor(post),
+                            onPressed: vm.busy || post.isMemberPost ? null : () => postEditor(post),
                             child: const Text('수정'),
                           ),
                           TextButton(

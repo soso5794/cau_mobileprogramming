@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'member_models.dart';
 import '../admin/operations_data.dart';
 import '../community/community_data.dart';
+import '../recruitment/recruitment.dart';
 import 'member_repository.dart';
 import '../calendar/workout_event.dart';
 
@@ -25,6 +26,9 @@ class MemberController extends ChangeNotifier {
       _run(() => repository.saveRanking(e));
   Future<bool> deleteRanking(String id) =>
       _run(() => repository.deleteRanking(id));
+  Future<bool> publishRecruitment(RecruitmentInput input, RecruitmentDraft draft,
+          {required String ownerId}) =>
+      _run(() => repository.publishRecruitment(input, draft, ownerId: ownerId));
   Future<bool> saveRecruitment(RecruitmentPreview p) =>
       _run(() => repository.saveRecruitment(p));
   Future<bool> deleteRecruitment(String id) =>
