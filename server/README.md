@@ -27,7 +27,8 @@ curl http://127.0.0.1:8787/health
 ```sh
 cd exercise-assist-team
 flutter pub get
-flutter run -d chrome --web-port=7362
+bash tool/run_web.sh
+# 준비 완료 후 일반 Chrome의 같은 프로필에서 http://localhost:7363 열기
 # Android 에뮬레이터는 10.0.2.2:8787을 기본 사용합니다.
 flutter run -d emulator-5554
 ```
@@ -35,7 +36,7 @@ flutter run -d emulator-5554
 서버 포트를 바꾸거나 HTTPS 프록시를 사용하는 경우:
 
 ```sh
-flutter run -d chrome --dart-define=AI_BASE_URL=http://127.0.0.1:8788
+flutter run -d web-server --web-hostname localhost --web-port 7363 --dart-define=AI_BASE_URL=http://127.0.0.1:8788
 ```
 
 앱의 **내정보 → AI 운동 도우미**에서 질문을 보내면 실제 API를 호출합니다. 유효한 키와 API 사용 가능 상태가 필요하며 요금이 발생할 수 있습니다. 현재 사용자는 키 설정을 나중에 하기로 했으므로 실제 OpenAI 응답/요금은 검증하지 않았습니다. 키가 없으면 명확한 설정 안내를 반환하며 더미 답변으로 대체하지 않습니다.

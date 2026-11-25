@@ -39,12 +39,15 @@
 git clone https://github.com/soso5794/cau_mobileprogramming.git
 cd cau_mobileprogramming
 flutter pub get
-flutter run -d chrome --web-port 7363
+bash tool/run_web.sh
+# 준비 완료 후 일반 Chrome에서 http://localhost:7363 열기
 # 또는 Android 에뮬레이터/기기를 연결한 뒤
 flutter run -d emulator-5554
 ```
 
 Android Studio/VS Code에서는 **이 폴더를 프로젝트 루트로 열고 `lib/main.dart`를 실행**하세요. Android SDK 경로는 개발 환경에 맞게 설정됩니다. ZIP에 개인 PC의 `android/local.properties`는 포함하지 않습니다.
+
+웹은 VS Code 실행 구성 **운동 Assist · 계정 유지 웹 (localhost:7363)** 또는 위 스크립트를 사용하세요. 임시 Chrome 대신 평소 사용하는 **같은 브라우저 프로필·주소**로 열어야 재실행 후에도 계정이 보입니다. 로그아웃해도 회원정보는 삭제되지 않습니다. [계정 유지·복원 안내](docs/LOCAL_ACCOUNT_PERSISTENCE.md)
 
 빠른 시연: 로그인 → **DEMO 계정으로 둘러보기** → 농구 / 러닝 / 축구 계정 → 하단 **내정보**.
 새 계정 시연: 회원가입 → 공통 질문 → 선택한 종목 질문 → 자기소개 → 완료. **나중에**를 선택하면 내정보에서 다시 설정할 수 있습니다.

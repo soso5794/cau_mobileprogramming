@@ -36,7 +36,8 @@ npm start
 다른 터미널에서 앱을 실행합니다.
 
 ```sh
-flutter run -d chrome --web-port 7363
+bash tool/run_web.sh
+# 일반 Chrome의 같은 프로필에서 http://localhost:7363 열기
 ```
 
 `http://127.0.0.1:8787/health`의 `mailConfigured: true`는 설정값이 있다는 뜻이며 실제 인증·발송·수신 성공을 보장하지 않습니다. 실제 수신은 앱에서 발송한 뒤 받은편지함/스팸함을 확인해야 합니다. SMTP 미설정·발송 실패 시 성공 안내나 가짜 번호를 반환하지 않습니다.
