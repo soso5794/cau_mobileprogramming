@@ -1,11 +1,30 @@
 import 'dart:convert';
+import '../admin/admin_gateway.dart';
+import '../admin/operations_data.dart';
+import '../community/community_data.dart';
+import '../calendar/workout_event.dart';
 
 import 'member_models.dart';
 import 'member_store.dart';
+import 'password_reset_service.dart';
 
 class MemberRepository {
-  MemberRepository({required this.store, PasswordHasher? hasher})
-    : hasher = hasher ?? PasswordHasher();
+  MemberRepository({
+    required this.store,
+    PasswordHasher? hasher,
+    PasswordResetService? passwordReset,
+    AdminGateway? adminGateway,
+  }) : hasher = hasher ?? PasswordHasher(),
+       passwordReset = passwordReset ?? HttpPasswordResetService(),
+       adminGateway = adminGateway ?? HttpAdminGateway();
+  final AdminGateway adminGateway;
+  String? _operatorToken;
+  bool get isOperator => sessionId == operatorId && _operatorToken != null;
+  OperationsData _operations = OperationsData();
+  OperationsData get operations => _operations;
+  List<MemberProfile> get managedMembers =>
+      isOperator ? List.unmodifiable(_profiles.values) : const [];
+  final PasswordResetService passwordReset;
   final MemberStore store;
   final PasswordHasher hasher;
   Map<String, MemberProfile> _profiles = {};
@@ -115,26 +134,36 @@ class MemberRepository {
     }
     _profiles = profiles;
     _credentials = credentials;
-    sessionId = session;
-    _remember = session != null;
+    _operations = j['operations'] is Map
+        ? OperationsData.fromJson(
+            Map<String, dynamic>.from(j['operations'] as Map),
+          )
+        : OperationsData();
+    // Operator sessions are issued by the server and never restored from local data.
+    sessionId = session == operatorId ? null : session;
+    _remember = sessionId != null;
+    _operatorToken = null;
   }
 
   Future<void> _commit(
     Map<String, MemberProfile> profiles,
     Map<String, Map<String, dynamic>> credentials,
     String? session,
-    bool remember,
-  ) async {
+    bool remember, {
+    OperationsData? operations,
+  }) async {
     await store.write(
       jsonEncode({
         'version': 1,
         'profiles': profiles.map((k, v) => MapEntry(k, v.toJson())),
         'credentials': credentials,
-        'session': remember ? session : null,
+        'session': remember && session != operatorId ? session : null,
+        'operations': (operations ?? _operations).toJson(),
       }),
     );
     _profiles = profiles;
     _credentials = credentials;
+    _operations = operations ?? _operations;
     sessionId = session;
     _remember = remember;
   }
@@ -165,7 +194,8 @@ class MemberRepository {
     final error =
         MemberValidation.email(email) ?? MemberValidation.password(password);
     if (error != null) throw MemberFailure(error);
-    if (normalized.endsWith('@demo.invalid') ||
+    if (normalized == operatorEmail ||
+        normalized.endsWith('@demo.invalid') ||
         _profiles.containsKey(normalized)) {
       throw const MemberFailure('이미 사용 중이거나 예약된 이메일입니다.', field: 'email');
     }
@@ -185,6 +215,10 @@ class MemberRepository {
 
   Future<void> login(String email, String password, bool remember) async {
     final id = MemberValidation.normalizeEmail(email);
+    if (id == operatorEmail) {
+      await loginOperator(password);
+      return;
+    }
     final credential = _credentials[id];
     if (credential == null || !await hasher.verify(password, credential)) {
       throw const MemberFailure('이메일 또는 비밀번호를 확인해주세요.', field: 'password');
@@ -211,5 +245,213 @@ class MemberRepository {
     await _commit({..._profiles, p.id: p}, _credentials, sessionId, _remember);
   }
 
-  Future<void> logout() => _commit(_profiles, _credentials, null, false);
+  String _resetAccount(String email) {
+    final id = MemberValidation.normalizeEmail(email);
+    final error = MemberValidation.email(email);
+    if (error != null) throw MemberFailure(error);
+    if (!_credentials.containsKey(id) || _profiles[id]?.isDemo != false) {
+      throw const MemberFailure(
+        '이 기기에 저장된 계정을 찾지 못했어요. 가입했던 브라우저·기기에서 시도해주세요.',
+      );
+    }
+    return id;
+  }
+
+  Future<String> requestPasswordReset(String email) async =>
+      passwordReset.request(_resetAccount(email));
+
+  Future<void> resetPassword(
+    String email,
+    String challengeId,
+    String code,
+    String password,
+  ) async {
+    final id = _resetAccount(email);
+    final error = MemberValidation.password(password);
+    if (error != null) throw MemberFailure(error);
+    if (!RegExp(r'^\d{6}$').hasMatch(code)) {
+      throw const MemberFailure('인증번호 6자리를 입력해주세요.');
+    }
+    // Prepare before consuming the one-time code. Never mutate on failed verification.
+    final credential = await hasher.hash(password);
+    await passwordReset.verify(id, challengeId, code);
+    try {
+      await _commit(_profiles, {..._credentials, id: credential}, null, false);
+    } catch (_) {
+      throw const MemberFailure(
+        '비밀번호를 저장하지 못했어요. 기존 비밀번호는 유지돼요. 새 인증번호를 요청한 뒤 다시 시도해주세요.',
+      );
+    }
+  }
+
+  Future<void> loginOperator(String password) async {
+    final token = await adminGateway.login(password);
+    try {
+      final profile =
+          _profiles[operatorId] ??
+          MemberProfile(
+            id: operatorId,
+            email: operatorEmail,
+            nickname: '운영자',
+            onboarding: 'deferred',
+          );
+      await _commit(
+        {..._profiles, operatorId: profile},
+        _credentials,
+        operatorId,
+        false,
+      );
+      _operatorToken = token;
+    } catch (_) {
+      try {
+        await adminGateway.logout(token);
+      } catch (_) {}
+      rethrow;
+    }
+  }
+
+  Future<void> _authorizeOperator() async {
+    final token = _operatorToken;
+    if (!isOperator || token == null) {
+      throw const MemberFailure('운영자 권한이 필요해요.');
+    }
+    await adminGateway.verify(token);
+    if (!isOperator || _operatorToken != token) {
+      throw const MemberFailure('운영자 계정이 바뀌었어요. 다시 로그인해주세요.');
+    }
+  }
+
+  Future<void> saveManagedProfile(MemberProfile p) async {
+    await _authorizeOperator();
+    final original = _profiles[p.id];
+    if (original == null ||
+        original.email != p.email ||
+        original.isDemo != p.isDemo) {
+      throw const MemberFailure('회원 정보를 다시 확인해주세요.');
+    }
+    _validateNickname(p.nickname, excluding: p.id);
+    await _commit(
+      {..._profiles, p.id: p.copyWith(events: original.events)},
+      _credentials,
+      sessionId,
+      false,
+      operations: _operations.changed('회원정보 수정', p.nickname),
+    );
+  }
+
+  Future<void> saveManagedEvent(String ownerId, WorkoutEvent event) async {
+    await _authorizeOperator();
+    final p = _profiles[ownerId];
+    if (p == null) throw const MemberFailure('회원을 찾지 못했어요.');
+    final error = event.validate();
+    if (error != null) throw MemberFailure(error);
+    final events = [...p.events.where((e) => e.id != event.id), event]
+      ..sort((a, b) => a.start.compareTo(b.start));
+    await _commit(
+      {..._profiles, ownerId: p.copyWith(events: events)},
+      _credentials,
+      sessionId,
+      false,
+      operations: _operations.changed(
+        '일정 저장',
+        '${p.nickname} · ${event.title}',
+      ),
+    );
+  }
+
+  Future<void> deleteManagedEvent(String ownerId, String eventId) async {
+    await _authorizeOperator();
+    final p = _profiles[ownerId];
+    if (p == null) throw const MemberFailure('회원을 찾지 못했어요.');
+    await _commit(
+      {
+        ..._profiles,
+        ownerId: p.copyWith(
+          events: p.events.where((e) => e.id != eventId).toList(),
+        ),
+      },
+      _credentials,
+      sessionId,
+      false,
+      operations: _operations.changed('일정 삭제', p.nickname),
+    );
+  }
+
+  Future<void> saveRanking(RankingEntry entry) async {
+    await _authorizeOperator();
+    final error = entry.validate();
+    if (error != null) throw MemberFailure(error);
+    await _commit(
+      _profiles,
+      _credentials,
+      sessionId,
+      false,
+      operations: _operations.changed(
+        '랭킹 저장',
+        entry.name,
+        rankings: [
+          ..._operations.rankings.where((e) => e.id != entry.id),
+          entry,
+        ],
+      ),
+    );
+  }
+
+  Future<void> deleteRanking(String id) async {
+    await _authorizeOperator();
+    await _commit(
+      _profiles,
+      _credentials,
+      sessionId,
+      false,
+      operations: _operations.changed(
+        '랭킹 삭제',
+        id,
+        rankings: _operations.rankings.where((e) => e.id != id).toList(),
+      ),
+    );
+  }
+
+  Future<void> saveRecruitment(RecruitmentPreview post) async {
+    await _authorizeOperator();
+    final error = post.validate();
+    if (error != null) throw MemberFailure(error);
+    await _commit(
+      _profiles,
+      _credentials,
+      sessionId,
+      false,
+      operations: _operations.changed(
+        '모집글 저장',
+        post.title,
+        posts: [..._operations.posts.where((e) => e.id != post.id), post],
+      ),
+    );
+  }
+
+  Future<void> deleteRecruitment(String id) async {
+    await _authorizeOperator();
+    await _commit(
+      _profiles,
+      _credentials,
+      sessionId,
+      false,
+      operations: _operations.changed(
+        '모집글 삭제',
+        id,
+        posts: _operations.posts.where((e) => e.id != id).toList(),
+      ),
+    );
+  }
+
+  Future<void> logout() async {
+    final token = _operatorToken;
+    await _commit(_profiles, _credentials, null, false);
+    _operatorToken = null;
+    if (token != null) {
+      try {
+        await adminGateway.logout(token);
+      } catch (_) {}
+    }
+  }
 }

@@ -2,9 +2,15 @@
   "name": "exercise-assist-ai-server",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node --env-file-if-exists=.env index.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "create-operator": "node create-operator.mjs"
+  },
+  "dependencies": {
+    "nodemailer": "^10.6.1"
   }
 }

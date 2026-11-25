@@ -120,6 +120,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
+              TextButton(
+                key: const Key('open-operator-login'),
+                onPressed: vm.busy
+                    ? null
+                    : () => context.push(AppRoutes.operatorLogin),
+                child: const Text('운영자 로그인'),
+              ),
               const Divider(height: 32),
               OutlinedButton.icon(
                 onPressed: vm.busy

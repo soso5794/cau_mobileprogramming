@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import 'member_models.dart';
+import '../admin/operations_data.dart';
+import '../community/community_data.dart';
 import 'member_repository.dart';
 import '../calendar/workout_event.dart';
 
@@ -8,6 +10,25 @@ class MemberController extends ChangeNotifier {
   MemberController(this.repository);
   final MemberRepository repository;
   MemberProfile? get profile => repository.current;
+  bool get isOperator => repository.isOperator;
+  List<MemberProfile> get managedMembers => repository.managedMembers;
+  OperationsData get operations => repository.operations;
+  Future<bool> loginOperator(String password) =>
+      _run(() => repository.loginOperator(password));
+  Future<bool> saveManagedProfile(MemberProfile p) =>
+      _run(() => repository.saveManagedProfile(p));
+  Future<bool> saveManagedEvent(String owner, WorkoutEvent e) =>
+      _run(() => repository.saveManagedEvent(owner, e));
+  Future<bool> deleteManagedEvent(String owner, String id) =>
+      _run(() => repository.deleteManagedEvent(owner, id));
+  Future<bool> saveRanking(RankingEntry e) =>
+      _run(() => repository.saveRanking(e));
+  Future<bool> deleteRanking(String id) =>
+      _run(() => repository.deleteRanking(id));
+  Future<bool> saveRecruitment(RecruitmentPreview p) =>
+      _run(() => repository.saveRecruitment(p));
+  Future<bool> deleteRecruitment(String id) =>
+      _run(() => repository.deleteRecruitment(id));
   bool ready = false, busy = false, _disposed = false;
   String? error, errorField;
   Future<bool> _run(Future<void> Function() action) async {
@@ -46,6 +67,20 @@ class MemberController extends ChangeNotifier {
       _run(() => repository.login(email, password, remember));
   Future<bool> useDemo(String id) => _run(() => repository.useDemo(id));
   Future<bool> save(MemberProfile p) => _run(() => repository.save(p));
+  Future<String?> requestPasswordReset(String email) async {
+    String? challenge;
+    final ok = await _run(() async {
+      challenge = await repository.requestPasswordReset(email);
+    });
+    return ok ? challenge : null;
+  }
+
+  Future<bool> resetPassword(
+    String email,
+    String challengeId,
+    String code,
+    String password,
+  ) => _run(() => repository.resetPassword(email, challengeId, code, password));
   Future<bool> logout() => _run(repository.logout);
   Future<bool> toggleFavorite(String sport) async {
     final p = profile;
@@ -89,6 +124,8 @@ class MemberController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    repository.passwordReset.close();
+    repository.adminGateway.close();
     super.dispose();
   }
 }

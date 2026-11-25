@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "운동 Assist · 계정 유지 웹 (localhost:7363)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "deviceId": "web-server",
+      "toolArgs": ["--web-hostname", "localhost", "--web-port", "7363"]
+    }
+  ]
+}

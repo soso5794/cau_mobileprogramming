@@ -94,7 +94,8 @@ Flutter HTTP 구현 가이드: https://docs.flutter.dev/cookbook/networking/fetc
 git clone https://github.com/soso5794/cau_mobileprogramming.git
 cd cau_mobileprogramming
 flutter pub get
-flutter run -d chrome --web-port 7363
+bash tool/run_web.sh
+# 일반 Chrome의 같은 프로필에서 http://localhost:7363 열기
 ```
 
 검증 환경: Flutter 3.47.4 / Dart 3.13.3. 지원 플랫폼: Web, Android.

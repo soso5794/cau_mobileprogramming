@@ -4,13 +4,14 @@ Flutter → 이 로컬 서버 → OpenAI Responses API 순서로 연결합니다
 
 ## 설정과 실행
 
-Node.js 22 이상이 필요합니다. 외부 npm 패키지는 사용하지 않습니다.
+Node.js 22 이상이 필요합니다. SMTP 메일 발송용 Nodemailer를 사용하므로 최초 실행 전 `npm ci`를 실행합니다.
 
 ```sh
 cd exercise-assist-team/server
 # .env가 없는 경우에만 복사하세요. 기존 키를 덮어쓰지 마세요.
 cp -n .env.example .env
 # 편집기에서 .env의 OPENAI_API_KEY= 뒤에 키 입력
+npm ci
 npm start
 ```
 
@@ -26,7 +27,8 @@ curl http://127.0.0.1:8787/health
 ```sh
 cd exercise-assist-team
 flutter pub get
-flutter run -d chrome --web-port=7362
+bash tool/run_web.sh
+# 준비 완료 후 일반 Chrome의 같은 프로필에서 http://localhost:7363 열기
 # Android 에뮬레이터는 10.0.2.2:8787을 기본 사용합니다.
 flutter run -d emulator-5554
 ```
@@ -34,7 +36,7 @@ flutter run -d emulator-5554
 서버 포트를 바꾸거나 HTTPS 프록시를 사용하는 경우:
 
 ```sh
-flutter run -d chrome --dart-define=AI_BASE_URL=http://127.0.0.1:8788
+flutter run -d web-server --web-hostname localhost --web-port 7363 --dart-define=AI_BASE_URL=http://127.0.0.1:8788
 ```
 
 앱의 **내정보 → AI 운동 도우미**에서 질문을 보내면 실제 API를 호출합니다. 유효한 키와 API 사용 가능 상태가 필요하며 요금이 발생할 수 있습니다. 현재 사용자는 키 설정을 나중에 하기로 했으므로 실제 OpenAI 응답/요금은 검증하지 않았습니다. 키가 없으면 명확한 설정 안내를 반환하며 더미 답변으로 대체하지 않습니다.
@@ -63,3 +65,11 @@ flutter test
 서버 테스트는 제공업체 요청을 대역으로 검증하며 API 비용을 발생시키지 않습니다. 실제 유료 API 응답 확인과 구분합니다.
 
 구현 기준: [OpenAI Responses API](https://developers.openai.com/api/reference/resources/responses/methods/create), [GPT-4.1 mini](https://developers.openai.com/api/docs/models/gpt-4.1-mini).
+
+## 이메일 비밀번호 재설정
+
+같은 서버에서 `/api/password-reset/request`, `/api/password-reset/verify`를 제공합니다. OpenAI 키와 독립적으로 동작합니다. `server/.env`의 `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`을 설정한 뒤 서버를 재시작하세요. [설정과 제한 사항](../docs/PASSWORD_RESET.md)을 참고하세요.
+
+## 운영자 인증
+
+`npm run create-operator`로 별도 운영자 계정 1개를 생성합니다. 비밀번호는 Git에서 제외된 `.operator-login.txt`, 비밀번호 해시는 `.operator-account.json`에 보관합니다. 생성 후 서버 재시작이 필요합니다. `/api/admin/login`, `/api/admin/session`, `/api/admin/logout`을 제공하며 SMTP/OpenAI 키가 필요하지 않습니다. [운영자 사용 안내](../docs/OPERATOR_ACCOUNT.md).
