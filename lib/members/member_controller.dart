@@ -5,6 +5,7 @@ import '../admin/operations_data.dart';
 import '../community/community_data.dart';
 import 'member_repository.dart';
 import '../calendar/workout_event.dart';
+import '../ranking/ranking_data.dart';
 
 class MemberController extends ChangeNotifier {
   MemberController(this.repository);
@@ -25,6 +26,11 @@ class MemberController extends ChangeNotifier {
       _run(() => repository.saveRanking(e));
   Future<bool> deleteRanking(String id) =>
       _run(() => repository.deleteRanking(id));
+  Future<bool> refreshRankings() => _run(repository.refreshRankings);
+  Future<bool> saveSportRanking(SportRankingEntry e) =>
+      _run(() => repository.saveSportRanking(e));
+  Future<bool> deleteSportRanking(String id) =>
+      _run(() => repository.deleteSportRanking(id));
   Future<bool> saveRecruitment(RecruitmentPreview p) =>
       _run(() => repository.saveRecruitment(p));
   Future<bool> deleteRecruitment(String id) =>

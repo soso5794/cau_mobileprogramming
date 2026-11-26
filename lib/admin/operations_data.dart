@@ -1,5 +1,6 @@
 import '../community/community_data.dart';
 import '../members/member_models.dart';
+import '../ranking/ranking_data.dart';
 
 class RankingEntry {
   const RankingEntry({
@@ -51,6 +52,7 @@ class OperationLog {
 class OperationsData {
   OperationsData({
     List<RankingEntry>? rankings,
+    List<SportRankingEntry>? sportRankings,
     List<RecruitmentPreview>? posts,
     List<OperationLog> logs = const [],
   }) : rankings = List.unmodifiable(
@@ -67,9 +69,11 @@ class OperationsData {
                ),
              ],
        ),
+       sportRankings = List.unmodifiable(sportRankings ?? demoSportRankings()),
        posts = List.unmodifiable(posts ?? demoRecruitments),
        logs = List.unmodifiable(logs);
   final List<RankingEntry> rankings;
+  final List<SportRankingEntry> sportRankings;
   final List<RecruitmentPreview> posts;
   final List<OperationLog> logs;
   List<RankingEntry> get sortedRankings => [...rankings]
@@ -81,9 +85,11 @@ class OperationsData {
     String action,
     String target, {
     List<RankingEntry>? rankings,
+    List<SportRankingEntry>? sportRankings,
     List<RecruitmentPreview>? posts,
   }) => OperationsData(
     rankings: rankings ?? this.rankings,
+    sportRankings: sportRankings ?? this.sportRankings,
     posts: posts ?? this.posts,
     logs: [
       OperationLog(action: action, target: target, at: DateTime.now()),
@@ -92,10 +98,17 @@ class OperationsData {
   );
   Map<String, Object> toJson() => {
     'rankings': rankings.map((e) => e.toJson()).toList(),
+    'sportRankings': sportRankings.map((e) => e.toJson()).toList(),
     'posts': posts.map((e) => e.toJson()).toList(),
     'logs': logs.map((e) => e.toJson()).toList(),
   };
   factory OperationsData.fromJson(Map<String, dynamic> j) => OperationsData(
+    sportRankings: (j['sportRankings'] as List?)
+        ?.map(
+          (e) =>
+              SportRankingEntry.fromJson(Map<String, dynamic>.from(e as Map)),
+        )
+        .toList(),
     rankings: (j['rankings'] as List)
         .map((e) => RankingEntry.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList(),

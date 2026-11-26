@@ -9,6 +9,7 @@ import '../members/member_widgets.dart';
 import '../models/app_state.dart';
 import 'operations_data.dart';
 import 'admin_editors.dart';
+import '../ranking/ranking_admin.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -111,6 +112,23 @@ class _AdminScreenState extends State<AdminScreen> {
               section == 0 ? _memberCard(p) : _eventsCard(p),
           ],
           if (section == 2) ...[
+            FilledButton.tonalIcon(
+              key: const Key('admin-sport-rankings'),
+              onPressed: vm.busy
+                  ? null
+                  : () => showDialog<void>(
+                      context: context,
+                      builder: (_) => const SportRankingManager(),
+                    ),
+              icon: const Icon(Icons.emoji_events_outlined),
+              label: const Text('종목별 성적 관리'),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              '기존 주간 활동 랭킹',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
             FilledButton.icon(
               key: const Key('admin-add-ranking'),
               onPressed: vm.busy ? null : () => rankEditor(),
@@ -119,7 +137,7 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              '운동 횟수 내림차순으로 홈 TOP 3와 랭킹 화면에 반영돼요. 동률은 항목 ID 순으로 정렬합니다.',
+              '운동 횟수 내림차순으로 홈 주간 TOP 3에 반영돼요. 종목별 성적은 위 메뉴에서 관리합니다. 동률은 항목 ID 순으로 정렬합니다.',
             ),
             if (vm.operations.rankings.isEmpty) const Text('등록된 랭킹이 없어요.'),
             for (final entry in vm.operations.sortedRankings)

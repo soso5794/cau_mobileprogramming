@@ -3,6 +3,7 @@ import '../admin/admin_gateway.dart';
 import '../admin/operations_data.dart';
 import '../community/community_data.dart';
 import '../calendar/workout_event.dart';
+import '../ranking/ranking_data.dart';
 
 import 'member_models.dart';
 import 'member_store.dart';
@@ -393,6 +394,65 @@ class MemberRepository {
           ..._operations.rankings.where((e) => e.id != entry.id),
           entry,
         ],
+      ),
+    );
+  }
+
+  Future<void> refreshRankings() async {
+    final raw = await store.read();
+    if (raw == null) return;
+    final data = jsonDecode(raw) as Map<String, dynamic>;
+    final operations = data['operations'];
+    final updated = operations is Map
+        ? OperationsData.fromJson(Map<String, dynamic>.from(operations))
+        : OperationsData();
+    _operations = updated;
+  }
+
+  Future<void> saveSportRanking(SportRankingEntry entry) async {
+    await _authorizeOperator();
+    final error = entry.validate();
+    if (error != null) throw MemberFailure(error);
+    final linkedIds = [
+      ...entry.memberIds,
+      if (entry.ownerId != null) entry.ownerId!,
+    ];
+    if (linkedIds.any(
+      (id) =>
+          id == operatorId ||
+          (!_profiles.containsKey(id) && !demoProfiles.any((p) => p.id == id)),
+    )) {
+      throw const MemberFailure('연결할 회원을 다시 선택해주세요.');
+    }
+    await _commit(
+      _profiles,
+      _credentials,
+      sessionId,
+      false,
+      operations: _operations.changed(
+        '종목별 랭킹 저장',
+        entry.name,
+        sportRankings: [
+          ..._operations.sportRankings.where((e) => e.id != entry.id),
+          entry,
+        ],
+      ),
+    );
+  }
+
+  Future<void> deleteSportRanking(String id) async {
+    await _authorizeOperator();
+    await _commit(
+      _profiles,
+      _credentials,
+      sessionId,
+      false,
+      operations: _operations.changed(
+        '종목별 랭킹 삭제',
+        id,
+        sportRankings: _operations.sportRankings
+            .where((e) => e.id != id)
+            .toList(),
       ),
     );
   }
