@@ -97,6 +97,7 @@ class RankingHeader extends StatelessWidget {
                               'ranking-distance-indicator',
                             ),
                             onSelected: onDistanceSelected,
+                            tonal: true,
                           ),
                         ),
                       ),
@@ -123,6 +124,7 @@ class _SlidingRankingTabs<T> extends StatelessWidget {
     required this.buttonKey,
     required this.indicatorKey,
     required this.onSelected,
+    this.tonal = false,
   });
   final List<T> values;
   final T selected;
@@ -131,6 +133,7 @@ class _SlidingRankingTabs<T> extends StatelessWidget {
   final Key Function(T) buttonKey;
   final Key indicatorKey;
   final ValueChanged<T> onSelected;
+  final bool tonal;
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +176,9 @@ class _SlidingRankingTabs<T> extends StatelessWidget {
                               ),
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
-                                  color: scheme.surfaceContainerHighest,
+                                  color: tonal
+                                      ? scheme.surfaceContainerLow
+                                      : scheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
@@ -192,7 +197,7 @@ class _SlidingRankingTabs<T> extends StatelessWidget {
                     child: DecoratedBox(
                       key: indicatorKey,
                       decoration: BoxDecoration(
-                        color: scheme.primary,
+                        color: tonal ? scheme.primaryContainer : scheme.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
@@ -211,7 +216,9 @@ class _SlidingRankingTabs<T> extends StatelessWidget {
                               backgroundColor: Colors.transparent,
                               foregroundColor: Color.lerp(
                                 scheme.onSurfaceVariant,
-                                scheme.onPrimary,
+                                tonal
+                                    ? scheme.onPrimaryContainer
+                                    : scheme.onPrimary,
                                 (1 - (progress - index).abs()).clamp(0.0, 1.0),
                               ),
                               shape: RoundedRectangleBorder(
