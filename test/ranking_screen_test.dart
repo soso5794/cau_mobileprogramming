@@ -328,70 +328,148 @@ void main() {
     },
   );
 
-  testWidgets('distance button animates the green indicator for 180ms', (
+  testWidgets(
+    'distance buttons jump content and slide the indicator for 240ms',
+    (tester) async {
+      final app = makeApp();
+      await app.members.initialize();
+      await app.members.useDemo('demo-running');
+      await openApp(tester, app, location: '/ranking');
+      final indicator = find.byKey(const Key('ranking-distance-indicator'));
+      for (final distance in [
+        RunningDistance.full,
+        RunningDistance.five,
+        RunningDistance.half,
+        RunningDistance.ten,
+      ]) {
+        final start = tester.getRect(indicator);
+        final target = find.byKey(Key('ranking-distance-${distance.name}'));
+        final end = tester.getRect(target);
+        await tester.tap(target);
+        await tester.pump();
+        expectRankingPage(tester, distance.index + 1);
+        expect(tester.getRect(indicator), start);
+        await tester.pump(const Duration(milliseconds: 180));
+        final x = tester.getTopLeft(indicator).dx;
+        expect(x, greaterThan(start.left < end.left ? start.left : end.left));
+        expect(x, lessThan(start.left > end.left ? start.left : end.left));
+        await tester.pump(const Duration(milliseconds: 60));
+        expect(tester.getRect(indicator), end);
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('sport buttons jump content and slide the indicator for 240ms', (
     tester,
   ) async {
     final app = makeApp();
     await app.members.initialize();
-    await app.members.useDemo('demo-running');
+    await app.members.useDemo('demo-basketball');
     await openApp(tester, app, location: '/ranking');
-    final indicator = find.byKey(const Key('ranking-distance-indicator'));
-    final start = tester.getRect(indicator);
-    final end = tester.getRect(find.byKey(const Key('ranking-distance-full')));
-    await tester.tap(find.byKey(const Key('ranking-distance-full')));
+    final indicator = find.byKey(const Key('ranking-sport-indicator'));
+    final start = tester.getTopLeft(indicator).dx;
+    await tester.tap(find.byKey(const Key('ranking-sport-soccer')));
     await tester.pump();
-    expectRankingPage(tester, 4);
+    expect(rankingPage(tester), 5);
+    expect(find.text('축구 팀 랭킹'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 180));
+    final middle = tester.getTopLeft(indicator).dx;
+    final end = tester
+        .getTopLeft(find.byKey(const Key('ranking-sport-soccer')))
+        .dx;
+    expect(middle, greaterThan(start));
+    expect(middle, lessThan(end));
+    expect(find.byKey(const Key('ranking-distance-controls')), findsNothing);
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(tester.getTopLeft(indicator).dx, closeTo(end, .01));
+    await tester.tap(find.byKey(const Key('ranking-sport-basketball')));
+    await tester.pump();
+    expectRankingPage(tester, 0);
+    expect(tester.getTopLeft(indicator).dx, closeTo(end, .01));
+    await tester.pump(const Duration(milliseconds: 180));
+    expect(tester.getTopLeft(indicator).dx, greaterThan(start));
+    expect(tester.getTopLeft(indicator).dx, lessThan(end));
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(tester.getTopLeft(indicator).dx, closeTo(start, .01));
+    await tester.tap(find.byKey(const Key('ranking-sport-running')));
+    await tester.pump();
+    expect(rankingPage(tester), 1);
     await tester.pump(const Duration(milliseconds: 90));
-    expect(tester.getTopLeft(indicator).dx, greaterThan(start.left));
-    expect(tester.getTopLeft(indicator).dx, lessThan(end.left));
-    await tester.pump(const Duration(milliseconds: 90));
+    final fade = tester.widget<Opacity>(
+      find
+          .ancestor(
+            of: find.byKey(const Key('ranking-distance-controls')),
+            matching: find.byType(Opacity),
+          )
+          .first,
+    );
+    expect(fade.opacity, greaterThan(0));
+    expect(fade.opacity, lessThan(1));
     await tester.pumpAndSettle();
-    expect(tester.getRect(indicator), end);
-    expect(tester.takeException(), isNull);
+    expectRankingPage(tester, 1);
   });
 
-  testWidgets(
-    'direct buttons jump content and animate only header selection for 180ms',
-    (tester) async {
-      final app = makeApp();
-      await app.members.initialize();
-      await app.members.useDemo('demo-basketball');
-      await openApp(tester, app, location: '/ranking');
-      final indicator = find.byKey(const Key('ranking-sport-indicator'));
-      final start = tester.getTopLeft(indicator).dx;
-      await tester.tap(find.byKey(const Key('ranking-sport-soccer')));
-      await tester.pump();
-      expect(rankingPage(tester), 5);
-      expect(find.text('축구 팀 랭킹'), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 90));
-      final middle = tester.getTopLeft(indicator).dx;
-      final end = tester
-          .getTopLeft(find.byKey(const Key('ranking-sport-soccer')))
-          .dx;
-      expect(middle, greaterThan(start));
-      expect(middle, lessThan(end));
-      expect(find.byKey(const Key('ranking-distance-controls')), findsNothing);
-      await tester.pump(const Duration(milliseconds: 90));
-      await tester.pumpAndSettle();
-      expect(tester.getTopLeft(indicator).dx, closeTo(end, .01));
-      await tester.tap(find.byKey(const Key('ranking-sport-running')));
-      await tester.pump();
-      expect(rankingPage(tester), 1);
-      await tester.pump(const Duration(milliseconds: 90));
-      final fade = tester.widget<Opacity>(
-        find
-            .ancestor(
-              of: find.byKey(const Key('ranking-distance-controls')),
-              matching: find.byType(Opacity),
-            )
-            .first,
-      );
-      expect(fade.opacity, greaterThan(0));
-      expect(fade.opacity, lessThan(1));
-      await tester.pumpAndSettle();
-      expectRankingPage(tester, 1);
-    },
-  );
+  for (final isDistance in [false, true]) {
+    testWidgets(
+      '${isDistance ? 'distance' : 'sport'} selection retargets smoothly and yields to a swipe',
+      (tester) async {
+        final app = makeApp();
+        await app.members.initialize();
+        await app.members.useDemo('demo-running');
+        await openApp(tester, app, location: '/ranking');
+        final indicator = find.byKey(
+          Key('ranking-${isDistance ? 'distance' : 'sport'}-indicator'),
+        );
+        final outward = find.byKey(
+          Key(isDistance ? 'ranking-distance-full' : 'ranking-sport-soccer'),
+        );
+        final returnTarget = find.byKey(
+          Key(
+            isDistance ? 'ranking-distance-five' : 'ranking-sport-basketball',
+          ),
+        );
+        await tester.tap(outward);
+        await tester.pump();
+        expect(rankingPage(tester), isDistance ? 4 : 5);
+        expect(find.text(isDistance ? '풀 개인 랭킹' : '축구 팀 랭킹'), findsOneWidget);
+        await tester.pump(const Duration(milliseconds: 60));
+        final interrupted = tester.getTopLeft(indicator).dx;
+        await tester.tap(returnTarget);
+        await tester.pump();
+        expect(rankingPage(tester), isDistance ? 1 : 0);
+        expect(find.text(isDistance ? '5km 개인 랭킹' : '농구 팀 랭킹'), findsOneWidget);
+        expect(tester.getTopLeft(indicator).dx, closeTo(interrupted, .01));
+        await tester.pump(const Duration(milliseconds: 60));
+        expect(tester.getTopLeft(indicator).dx, lessThan(interrupted));
+        await tester.pump(const Duration(milliseconds: 180));
+        expect(tester.getRect(indicator), tester.getRect(returnTarget));
+
+        // Start another click transition, then take control with a drag.
+        if (!isDistance) await keyTap(tester, 'ranking-sport-running');
+        await tester.tap(outward);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 60));
+        await swipeRanking(tester, next: false);
+        expectRankingPage(tester, isDistance ? 3 : 4);
+        expect(
+          tester.getRect(find.byKey(const Key('ranking-sport-indicator'))),
+          tester.getRect(find.byKey(const Key('ranking-sport-running'))),
+        );
+        expect(
+          tester.getRect(find.byKey(const Key('ranking-distance-indicator'))),
+          tester.getRect(
+            find.byKey(
+              Key(
+                isDistance ? 'ranking-distance-half' : 'ranking-distance-full',
+              ),
+            ),
+          ),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets(
     'reduced motion applies header selection and distance controls immediately',
@@ -620,7 +698,7 @@ void main() {
     },
   );
   testWidgets(
-    'podium includes row details and remainder excludes its three entries',
+    'podium cards have equal sizes, multiline details and separate remainder',
     (tester) async {
       final app = makeApp();
       await app.members.initialize();
@@ -633,8 +711,15 @@ void main() {
           app.members.operations.sportRankings,
           sport,
         );
+        final firstCard = tester.getRect(
+          find.byKey(Key('ranking-podium-${rows.first.entry.id}')),
+        );
         for (final row in rows.take(3)) {
           final card = find.byKey(Key('ranking-podium-${row.entry.id}'));
+          final rect = tester.getRect(card);
+          expect(rect.width, closeTo(firstCard.width, .001));
+          expect(rect.height, closeTo(firstCard.height, .001));
+          expect(rect.top, closeTo(firstCard.top, .001));
           expect(
             find.descendant(of: card, matching: find.text(row.rankLabel)),
             findsOneWidget,
@@ -653,7 +738,13 @@ void main() {
           expect(
             find.descendant(
               of: card,
-              matching: find.text(row.entry.detailLabel),
+              matching: find.text(switch (sport) {
+                RankingSport.basketball =>
+                  '${row.entry.wins}승 ${row.entry.losses}패\n${row.entry.games}경기',
+                RankingSport.soccer =>
+                  '${row.entry.wins}승 ${row.entry.draws}무 ${row.entry.losses}패\n득실차 +${row.entry.goalDifference}',
+                RankingSport.running => row.entry.detailLabel,
+              }),
             ),
             findsOneWidget,
           );

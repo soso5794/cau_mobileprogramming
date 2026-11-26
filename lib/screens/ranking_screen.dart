@@ -155,7 +155,7 @@ class _RankingPagerState extends State<_RankingPager>
 
   void _showSelection(_RankingPage page, {required bool animate}) {
     final duration = animate && !MediaQuery.disableAnimationsOf(context)
-        ? const Duration(milliseconds: 180)
+        ? const Duration(milliseconds: 240)
         : Duration.zero;
     final sport = _sportPosition(page.index.toDouble());
     final running = page.sport == RankingSport.running ? 1.0 : 0.0;
@@ -177,7 +177,7 @@ class _RankingPagerState extends State<_RankingPager>
       );
       _runningVisibility.animateTo(
         running,
-        duration: duration,
+        duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
       );
     }

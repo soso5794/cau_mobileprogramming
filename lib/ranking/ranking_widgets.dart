@@ -34,20 +34,22 @@ class RankingPodium extends StatelessWidget {
           ],
         );
       }
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (final row in ordered)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: _PodiumCard(
-                  row: row,
-                  mine: row.entry.belongsTo(accountId),
+      return IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final row in ordered)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: _PodiumCard(
+                    row: row,
+                    mine: row.entry.belongsTo(accountId),
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       );
     },
   );
@@ -62,13 +64,16 @@ class _PodiumCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       key: Key('ranking-podium-${row.entry.id}'),
-      padding: EdgeInsets.fromLTRB(8, row.rank == 1 ? 24 : 12, 8, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
         color: row.rank == 1
             ? scheme.primaryContainer
             : scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(18),
-        border: mine ? Border.all(color: scheme.primary, width: 2) : null,
+        border: Border.all(
+          color: mine ? scheme.primary : Colors.transparent,
+          width: 2,
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -107,7 +112,7 @@ class _PodiumCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            row.entry.detailLabel,
+            row.entry.detailLabel.replaceFirst(' · ', '\n'),
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
           ),
