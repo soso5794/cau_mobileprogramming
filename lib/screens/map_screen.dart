@@ -9,6 +9,8 @@ import '../map/place_sheet.dart';
 import '../map/sport_place.dart';
 import '../models/app_state.dart';
 import '../models/sport_icons.dart';
+import '../recruitment/place_search_service.dart';
+import '../recruitment/recruitment_location.dart';
 import '../routing/app_routes.dart';
 
 /// 지도 탭: 종목별 운동 장소를 실제 지도(OpenStreetMap) 위에 보여준다.
@@ -17,8 +19,13 @@ import '../routing/app_routes.dart';
 /// - [8강 packages] geolocator 로 "내 위치" (버튼을 눌렀을 때만 권한 요청)
 /// - [6강 async]   마커를 누르면 그 좌표의 실시간 날씨를 받아 운동 지수 표시
 /// - [5강 state]   저장한 장소는 AppState(Provider)에 넣어 다른 화면과 공유
+/// - 장소·주소 검색: 모집글 장소 선택과 같은 PlaceSearchService
+///   (Flutter → 로컬 Node 서버 /api/places/search → Geoapify, 키는 server/.env)
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  const MapScreen({super.key, this.searchService});
+
+  /// 테스트에서 가짜 검색 서비스를 넣기 위한 자리. 평소에는 null → 기본 서비스.
+  final PlaceSearchService? searchService;
 
   /// 위젯 테스트에서는 네트워크 타일을 끈다. (테스트는 인터넷에 의존하지 않는다)
   static bool showTiles = true;
@@ -33,11 +40,81 @@ class _MapScreenState extends State<MapScreen> {
   GeoPoint? _me;
   bool _locating = false;
 
+  // ── 장소·주소 검색 상태 ──
+  final _query = TextEditingController();
+  late final PlaceSearchService _search =
+      widget.searchService ?? PlaceSearchService();
+  List<RecruitmentLocation> _results = [];
+  RecruitmentLocation? _picked; // 검색으로 고른 장소 (빨간 핀)
+  final _searchedByName = <String, RecruitmentLocation>{}; // 내 장소에서 다시 찾기용
+  bool _searching = false;
+  String? _searchMessage;
+
   @override
   void dispose() {
     _map.dispose();
+    _query.dispose();
+    if (widget.searchService == null) _search.close();
     super.dispose();
   }
+
+  Future<void> _runSearch() async {
+    if (_searching) return;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _searching = true;
+      _searchMessage = null;
+      _results = [];
+    });
+    try {
+      final results = await _search.search(_query.text);
+      if (!mounted) return;
+      setState(() {
+        _results = results;
+        if (results.isEmpty) _searchMessage = '검색 결과가 없어요. 다른 장소명이나 주소로 검색해보세요.';
+      });
+    } on PlaceSearchFailure catch (e) {
+      if (mounted) setState(() => _searchMessage = e.message);
+    } finally {
+      if (mounted) setState(() => _searching = false);
+    }
+  }
+
+  void _clearSearch() {
+    _query.clear();
+    setState(() {
+      _results = [];
+      _picked = null;
+      _searchMessage = null;
+    });
+  }
+
+  /// 검색 결과 선택 → 지도 이동 + 빨간 핀. 날씨는 핀을 누르면 기존 시트로 본다.
+  void _pickResult(RecruitmentLocation location) {
+    setState(() {
+      _picked = location;
+      _results = [];
+      _searchedByName[location.name] = location;
+    });
+    _map.move(_latLng(location.latitude, location.longitude), 16);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text('${location.name} · 빨간 핀을 누르면 날씨와 운동 지수를 볼 수 있어요.'),
+        duration: const Duration(seconds: 3),
+      ));
+  }
+
+  /// 검색한 장소를 기존 PlaceSheet(날씨·지수·즐겨찾기)에서 쓸 수 있게 변환.
+  SportPlace _asSportPlace(RecruitmentLocation location) => SportPlace(
+        id: 'search',
+        name: location.name,
+        area: location.address.isEmpty ? '검색한 장소' : location.address,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        sports: SportPlaces.mapSports,
+        kind: '검색 결과',
+      );
 
   static LatLng _latLng(double lat, double lng) => LatLng(lat, lng);
 
@@ -102,36 +179,45 @@ class _MapScreenState extends State<MapScreen> {
               if (entries.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text('아직 저장한 장소가 없어요. 지도에서 마커를 눌러 저장해보세요.'),
+                  child: Text(
+                    '아직 저장한 장소가 없어요. 지도에서 마커를 눌러 저장하거나, '
+                    '주간 계획이나 운동 분석에서 자주 가는 위치를 등록하면 여기에 표시돼요.',
+                  ),
                 ),
               for (final e in entries)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(sportIcon(e.sport), color: sportColor(e.sport)),
                   title: Text(e.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: Text(SportPlaces.byName(e.name) == null
-                      ? '${e.sport} · 직접 입력한 장소 (지도 좌표 없음)'
-                      : '${e.sport} · 지도에서 보기'),
+                  subtitle: Text(
+                    SportPlaces.byName(e.name) != null || _searchedByName.containsKey(e.name)
+                        ? '${e.sport} · 지도에서 보기'
+                        : '${e.sport} · 운동 분석 보기',
+                  ),
                   onTap: () {
-                    final place = SportPlaces.byName(e.name);
                     Navigator.of(sheetContext).pop();
-                    if (place != null) _open(place);
+                    final place = SportPlaces.byName(e.name);
+                    final searched = _searchedByName[e.name];
+                    if (place != null) {
+                      _open(place);
+                    } else if (searched != null) {
+                      _pickResult(searched);
+                      _open(_asSportPlace(searched));
+                    } else {
+                      // 좌표가 없는 장소는 기존처럼 운동 분석 화면으로.
+                      app.selectTarget(e.sport, e.name);
+                      context.go(AppRoutes.analysisPage);
+                    }
                   },
                 ),
               const SizedBox(height: 6),
               OutlinedButton.icon(
                 onPressed: () {
                   Navigator.of(sheetContext).pop();
-                  final sport = _sport ??
-                      (app.selectedSports.isNotEmpty ? app.selectedSports.first : null);
-                  if (sport == null) {
-                    context.go(AppRoutes.sports);
-                  } else {
-                    context.go('/sports/${AppRoutes.sportId(sport)}/locations');
-                  }
+                  context.go(AppRoutes.planPage);
                 },
                 icon: const Icon(Icons.edit_location_alt_outlined),
-                label: const Text('장소 직접 입력하기'),
+                label: const Text('주간 계획에서 위치 등록'),
               ),
             ],
           ),
@@ -159,6 +245,52 @@ class _MapScreenState extends State<MapScreen> {
 
     return Column(
       children: [
+        // ── 장소·주소 검색 ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 2),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: const ValueKey('map-search-field'),
+                  controller: _query,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => _runSearch(),
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    prefixIcon: const Icon(Icons.search),
+                    hintText: '장소명 또는 주소 검색',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    suffixIcon: _query.text.isEmpty && _picked == null
+                        ? null
+                        : IconButton(
+                            tooltip: '검색 지우기',
+                            onPressed: _clearSearch,
+                            icon: const Icon(Icons.close),
+                          ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton(
+                key: const ValueKey('map-search-button'),
+                onPressed: _searching ? null : _runSearch,
+                child: const Text('검색'),
+              ),
+            ],
+          ),
+        ),
+        if (_searching) const LinearProgressIndicator(minHeight: 2),
+        if (_searchMessage != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
+            child: Text(
+              _searchMessage!,
+              style: TextStyle(fontSize: 12, color: scheme.error),
+            ),
+          ),
+
         // ── 종목 필터 ──
         SizedBox(
           height: 48,
@@ -235,12 +367,26 @@ class _MapScreenState extends State<MapScreen> {
                           height: 26,
                           child: const _MyLocationDot(),
                         ),
+                      if (_picked != null)
+                        Marker(
+                          point: _latLng(_picked!.latitude, _picked!.longitude),
+                          width: 46,
+                          height: 46,
+                          alignment: Alignment.topCenter,
+                          child: GestureDetector(
+                            key: const ValueKey('marker-search'),
+                            onTap: () => _open(_asSportPlace(_picked!)),
+                            child: const Icon(Icons.location_on,
+                                size: 46, color: Color(0xFFE53935)),
+                          ),
+                        ),
                     ],
                   ),
                   if (MapScreen.showTiles)
                     const RichAttributionWidget(
                       attributions: [
                         TextSourceAttribution('OpenStreetMap contributors'),
+                        TextSourceAttribution('검색: Geoapify'),
                       ],
                     ),
                 ],
@@ -291,6 +437,52 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                 ),
               ),
+
+              // 검색 결과 목록 (지도 위에 겹쳐 표시)
+              if (_results.isNotEmpty)
+                Positioned(
+                  left: 14,
+                  right: 14,
+                  top: 8,
+                  child: Material(
+                    elevation: 6,
+                    borderRadius: BorderRadius.circular(16),
+                    color: scheme.surface,
+                    clipBehavior: Clip.antiAlias,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 260),
+                      child: ListView(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        children: [
+                          ListTile(
+                            dense: true,
+                            title: Text('검색 결과 ${_results.length}곳',
+                                style: const TextStyle(fontWeight: FontWeight.w800)),
+                            trailing: IconButton(
+                              tooltip: '결과 닫기',
+                              icon: const Icon(Icons.close),
+                              onPressed: () => setState(() => _results = []),
+                            ),
+                          ),
+                          for (final (i, r) in _results.indexed)
+                            ListTile(
+                              key: ValueKey('search-result-$i'),
+                              dense: true,
+                              leading: const Icon(Icons.place_outlined),
+                              title: Text(r.name,
+                                  maxLines: 1, overflow: TextOverflow.ellipsis),
+                              subtitle: r.address.isEmpty
+                                  ? null
+                                  : Text(r.address,
+                                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                              onTap: () => _pickResult(r),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

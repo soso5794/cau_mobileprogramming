@@ -1,9 +1,15 @@
 import 'package:exercise_assist/map/location_service.dart';
 import 'package:exercise_assist/map/sport_place.dart';
+import 'package:exercise_assist/recruitment/place_search_service.dart';
+import 'package:exercise_assist/screens/map_screen.dart';
 import 'package:exercise_assist/weather/weather_forecast.dart';
 import 'package:exercise_assist/weather/weather_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:provider/provider.dart';
+import 'dart:convert';
 
 import 'support/member_test_support.dart';
 import 'support/weather_fixture.dart';
@@ -125,5 +131,76 @@ void main() {
     await tester.tap(find.byTooltip('내 위치'));
     await tester.pumpAndSettle();
     expect(find.text('위치 권한이 거부되었어요.'), findsOneWidget);
+  });
+
+  testWidgets('장소·주소 검색: 결과 선택 시 빨간 핀이 생기고 핀에서 날씨를 본다', (tester) async {
+    MapScreen.showTiles = false;
+    final requests = <String>[];
+    final service = PlaceSearchService(
+      baseUrl: Uri.parse('http://127.0.0.1:8787'),
+      client: MockClient((request) async {
+        requests.add(request.url.path);
+        final query = (jsonDecode(request.body) as Map)['query'];
+        expect(query, '흑석로 84');
+        return http.Response.bytes(
+          utf8.encode(jsonEncode({
+            'results': [
+              {
+                'name': '중앙대학교',
+                'address': '서울 동작구 흑석로 84',
+                'latitude': 37.5045,
+                'longitude': 126.9572,
+              },
+            ],
+          })),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+    final app = makeApp(weatherService: FixtureWeatherService());
+    await app.members.initialize();
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: app,
+      child: MaterialApp(home: Scaffold(body: MapScreen(searchService: service))),
+    ));
+    await tester.pumpAndSettle();
+
+    // 기존 운동 장소 마커는 그대로 있다.
+    expect(find.byKey(const ValueKey('marker-cau')), findsOneWidget);
+
+    await tester.enterText(find.byKey(const ValueKey('map-search-field')), '흑석로 84');
+    await tester.tap(find.byKey(const ValueKey('map-search-button')));
+    await tester.pumpAndSettle();
+    expect(requests, ['/api/places/search']);
+    expect(find.text('서울 동작구 흑석로 84'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('search-result-0')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('marker-search')), findsOneWidget);
+    expect(find.byKey(const ValueKey('search-result-0')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('marker-search')));
+    await tester.pumpAndSettle();
+    expect(find.text('92점 · 좋음'), findsWidgets); // 기존 날씨 시트 재사용
+  });
+
+  testWidgets('검색 서버가 꺼져 있으면 안내 문구를 보여준다', (tester) async {
+    MapScreen.showTiles = false;
+    final service = PlaceSearchService(
+      baseUrl: Uri.parse('http://127.0.0.1:8787'),
+      client: MockClient((_) async => throw http.ClientException('offline')),
+    );
+    final app = makeApp(weatherService: FixtureWeatherService());
+    await app.members.initialize();
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: app,
+      child: MaterialApp(home: Scaffold(body: MapScreen(searchService: service))),
+    ));
+    await tester.enterText(find.byKey(const ValueKey('map-search-field')), '중앙대');
+    await tester.tap(find.byKey(const ValueKey('map-search-button')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('장소 검색 서버에 연결할 수 없어요'), findsOneWidget);
+    expect(find.byKey(const ValueKey('marker-cau')), findsOneWidget);
   });
 }
