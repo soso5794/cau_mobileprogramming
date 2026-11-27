@@ -173,7 +173,10 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
                           AppRoutes.sportLabels[state.pathParameters['sport']];
                       return sport == null
                           ? const RouteErrorScreen(message: '지원하지 않는 운동 종목이에요.')
-                          : SportSetupScreen(sport: sport);
+                          : SportSetupScreen(
+                              sport: sport,
+                              isNew: state.uri.queryParameters['new'] == '1',
+                            );
                     },
                   ),
                   GoRoute(

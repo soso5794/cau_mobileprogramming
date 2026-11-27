@@ -55,9 +55,9 @@ class MapScreen extends StatelessWidget {
             const SizedBox(height: 8),
             const Text('아직 저장한 운동 장소가 없어요.', style: TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 5),
-            const Text('홈에서 운동을 선택하고 설정하면 장소가 여기에 표시돼요.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
+            const Text('주간 계획이나 운동 분석에서 자주 가는 위치를 등록하면 여기에 표시돼요.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
             const SizedBox(height: 10),
-            FilledButton(onPressed: () => context.go(AppRoutes.sports), child: const Text('홈으로 이동')),
+            FilledButton(onPressed: () => context.go(AppRoutes.planPage), child: const Text('주간 계획에서 위치 등록')),
           ]))
         else
           for (final entry in entries)

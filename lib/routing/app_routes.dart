@@ -42,6 +42,12 @@ abstract final class AppRoutes {
     'cycling': '자전거',
   };
 
+  /// 종목별 자주 가는 위치 화면 / 종목 정보 입력 화면 주소.
+  static String locationsPath(String sport) =>
+      '/sports/${sportId(sport)}/locations';
+  static String setupPath(String sport, {bool isNew = false}) =>
+      '/sports/${sportId(sport)}/setup${isNew ? '?new=1' : ''}';
+
   static String sportId(String label) =>
       sportLabels.entries.firstWhere((entry) => entry.value == label).key;
 

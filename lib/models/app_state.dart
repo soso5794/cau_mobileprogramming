@@ -51,6 +51,7 @@ class AppState extends ChangeNotifier {
       currentSport = null;
       currentLocation = null;
       _locations.clear();
+      _seeded.clear();
       _previousId = loginId;
     }
     _auth.value =
@@ -97,6 +98,22 @@ class AppState extends ChangeNotifier {
     return saved;
   }
 
+  /// 새 운동을 추가하면서 그 운동의 추가 정보를 한 번에 저장한다.
+  /// (저장 전까지는 기존 프로필이 바뀌지 않는다.)
+  Future<bool> addSportWithPreference(
+    String sport,
+    Map<String, String> answers,
+  ) async {
+    final p = members.profile;
+    if (p == null) return false;
+    return members.save(
+      p.copyWith(
+        sports: p.sports.contains(sport) ? p.sports : [...p.sports, sport],
+        answers: {...p.answers, sport: answers},
+      ),
+    );
+  }
+
   Map<String, String> preferenceOf(String sport) =>
       members.profile?.answers[sport] ?? const {};
   bool hasPreference(String sport) =>
@@ -113,8 +130,25 @@ class AppState extends ChangeNotifier {
   // ───────────────────────── 운동별 자주 가는 위치 ─────────────────────────
   final Map<String, List<String>> _locations = {};
 
-  List<String> locationsOf(String sport) =>
-      List.unmodifiable(_locations[sport] ?? const []);
+  final Set<String> _seeded = {};
+
+  /// 운동선택 탭이 없어도 주간 계획·분석이 동작하도록, 처음 조회할 때
+  /// 프로필의 '주로 사용하는 장소'(없으면 '활동 지역')를 기본 위치로 넣어준다.
+  void _seedLocations(String sport) {
+    final common = members.profile?.common;
+    if (common == null || !_seeded.add(sport)) return;
+    final place = (common['place'] ?? '').trim();
+    final region = (common['region'] ?? '').trim();
+    final seed = place.isNotEmpty ? place : region;
+    if (seed.isEmpty) return;
+    final list = _locations.putIfAbsent(sport, () => []);
+    if (!list.contains(seed)) list.add(seed);
+  }
+
+  List<String> locationsOf(String sport) {
+    _seedLocations(sport);
+    return List.unmodifiable(_locations[sport] ?? const []);
+  }
 
   void addLocation(String sport, String location) {
     final list = _locations.putIfAbsent(sport, () => []);

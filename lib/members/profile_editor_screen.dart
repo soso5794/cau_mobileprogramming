@@ -209,6 +209,20 @@ class _ProfileEditorScreenState extends State<ProfileEditorScreen> {
                           selected: draft.sports.toSet(),
                           onSelected: draft.toggleSport,
                         ),
+                        if (draft.sports.any(
+                          (e) => !draft.original.sports.contains(e),
+                        ))
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              '새로 추가한 운동(${draft.sports.where((e) => !draft.original.sports.contains(e)).join(', ')})은 '
+                              '다음 단계에서 실력·횟수 같은 정보를 입력해요.',
+                              key: const Key('new-sport-hint'),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
                         field('주 활동 지역 · 시/구', 'region'),
                         field('주로 사용하는 장소 (선택)', 'place'),
                         commonChoice('선호 시간대', 'times', [
