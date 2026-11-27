@@ -1,4 +1,5 @@
 import 'package:exercise_assist/community/community_data.dart';
+import 'package:exercise_assist/community/recruitment_card.dart';
 import 'package:exercise_assist/map/recruitment_pins.dart';
 import 'package:exercise_assist/recruitment/recruitment.dart';
 import 'package:exercise_assist/recruitment/recruitment_location.dart';
@@ -81,7 +82,7 @@ void main() {
     expect(ok, isTrue);
     final post = app.members.operations.posts.first;
 
-    final router = await openApp(tester, app, location: '/map');
+    await openApp(tester, app, location: '/map');
     final pin = find.byKey(const ValueKey('post-pin-37.5300,126.9800'));
     expect(pin, findsOneWidget);
     expect(find.text('모집 1'), findsOneWidget);
@@ -92,8 +93,8 @@ void main() {
 
     await tester.tap(find.byKey(ValueKey('map-post-${post.id}')));
     await tester.pumpAndSettle();
-    expect(router.routerDelegate.currentConfiguration.uri.path,
-        '/community/posts/${post.id}');
+    // 기존 모집글 상세 화면(/community/posts/:id)이 열렸는지 화면으로 확인
+    expect(find.byType(RecruitmentDetailScreen), findsOneWidget);
   });
 
   testWidgets('모집글 칩을 끄면 핀이 사라진다', (tester) async {
@@ -107,7 +108,11 @@ void main() {
     );
     await openApp(tester, app, location: '/map');
     expect(find.byKey(const ValueKey('post-pin-37.5300,126.9800')), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('map-posts-toggle')));
+    // 칩 줄은 가로 스크롤이라 화면 밖에 있을 수 있음 → 먼저 보이게 스크롤
+    final toggle = find.byKey(const ValueKey('map-posts-toggle'));
+    await tester.ensureVisible(toggle);
+    await tester.pumpAndSettle();
+    await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('post-pin-37.5300,126.9800')), findsNothing);
     expect(find.byKey(const ValueKey('marker-cau')), findsOneWidget); // 운동 장소는 유지
