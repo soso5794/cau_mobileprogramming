@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../map/location_service.dart';
 import '../map/place_sheet.dart';
+import '../map/recruitment_pins.dart';
 import '../map/sport_place.dart';
 import '../models/app_state.dart';
 import '../models/sport_icons.dart';
@@ -39,6 +40,7 @@ class _MapScreenState extends State<MapScreen> {
   String? _sport; // null = 전체
   GeoPoint? _me;
   bool _locating = false;
+  bool _showPosts = true; // 모집글 핀 표시 여부
 
   // ── 장소·주소 검색 상태 ──
   final _query = TextEditingController();
@@ -226,6 +228,92 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  /// 모집글 핀을 누르면: 그 장소의 모집글 목록 → 누르면 기존 모집글 상세 화면.
+  void _openPosts(RecruitmentPin pin) {
+    _map.move(
+      _latLng(pin.latitude, pin.longitude),
+      _map.camera.zoom < 15 ? 15 : _map.camera.zoom,
+    );
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.7,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            children: [
+              Text(pin.place,
+                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 2),
+              Text('모집 중인 글 ${pin.posts.length}개',
+                  style: TextStyle(
+                      color: Theme.of(sheetContext).colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 8),
+              for (final post in pin.posts)
+                Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    key: ValueKey('map-post-${post.id}'),
+                    leading: Icon(sportIcon(post.sport), color: sportColor(post.sport)),
+                    title: Text(post.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text('${post.time}\n${post.people} · ${post.sourceLabel}'),
+                    isThreeLine: true,
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      context.push('/community/posts/${post.id}');
+                    },
+                  ),
+                ),
+              const SizedBox(height: 4),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                      _open(SportPlace(
+                        id: 'posts',
+                        name: pin.place,
+                        area: '모집글 장소',
+                        latitude: pin.latitude,
+                        longitude: pin.longitude,
+                        sports: SportPlaces.mapSports.contains(pin.mainSport)
+                            ? [pin.mainSport]
+                            : SportPlaces.mapSports,
+                        kind: '모집 장소',
+                      ));
+                    },
+                    icon: const Icon(Icons.wb_sunny_outlined),
+                    label: const Text('이곳 날씨'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                      context.push(AppRoutes.recruitmentCreate(pin.mainSport));
+                    },
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('모집글 쓰기'),
+                  ),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   bool _isSaved(AppState app, SportPlace place) =>
       place.sports.any((s) => app.locationsOf(s).contains(place.name));
 
@@ -234,6 +322,10 @@ class _MapScreenState extends State<MapScreen> {
     final app = context.watch<AppState>();
     final scheme = Theme.of(context).colorScheme;
     final places = SportPlaces.visible(sport: _sport, origin: _me);
+    final allPosts = app.members.operations.posts;
+    final pins = recruitmentPins(allPosts, sport: _sport);
+    final pinPostCount = pins.fold(0, (sum, p) => sum + p.posts.length);
+    final unmapped = unmappedRecruitmentCount(allPosts, sport: _sport);
     final savedCount = [
       for (final sport in app.selectedSports) ...app.locationsOf(sport),
     ].length;
@@ -313,6 +405,15 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ],
               const SizedBox(width: 6),
+              FilterChip(
+                key: const ValueKey('map-posts-toggle'),
+                avatar: const Icon(Icons.campaign_outlined, size: 18),
+                label: Text('모집글 $pinPostCount'),
+                selected: _showPosts,
+                showCheckmark: false,
+                onSelected: (on) => setState(() => _showPosts = on),
+              ),
+              const SizedBox(width: 6),
               ActionChip(
                 avatar: const Icon(Icons.bookmark_outline, size: 18),
                 label: Text('내 장소 $savedCount'),
@@ -367,6 +468,20 @@ class _MapScreenState extends State<MapScreen> {
                           height: 26,
                           child: const _MyLocationDot(),
                         ),
+                      if (_showPosts)
+                        for (final pin in pins)
+                          Marker(
+                            point: _latLng(pin.latitude, pin.longitude),
+                            width: 78,
+                            height: 34,
+                            alignment: Alignment.topCenter,
+                            child: _PostPinMarker(
+                              key: ValueKey(
+                                  'post-pin-${pin.latitude.toStringAsFixed(4)},${pin.longitude.toStringAsFixed(4)}'),
+                              pin: pin,
+                              onTap: () => _openPosts(pin),
+                            ),
+                          ),
                       if (_picked != null)
                         Marker(
                           point: _latLng(_picked!.latitude, _picked!.longitude),
@@ -489,7 +604,11 @@ class _MapScreenState extends State<MapScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
           child: Text(
-            '${places.length}곳 · 장소 좌표는 대략적인 위치예요.',
+            [
+              '운동 장소 ${places.length}곳',
+              if (_showPosts) '모집글 $pinPostCount개',
+              if (_showPosts && unmapped > 0) '지도 위치 없는 모집글 $unmapped개',
+            ].join(' · '),
             style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
           ),
         ),
@@ -616,6 +735,48 @@ class _PlaceCard extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 알바몬식 말풍선 핀: 종목 아이콘 + "모집 n".
+class _PostPinMarker extends StatelessWidget {
+  const _PostPinMarker({super.key, required this.pin, required this.onTap});
+  final RecruitmentPin pin;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = sportColor(pin.mainSport);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(17),
+          border: Border.all(color: color, width: 2.5),
+          boxShadow: const [
+            BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(sportIcon(pin.mainSport), size: 16, color: color),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                '모집 ${pin.posts.length}',
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w900, color: color),
+              ),
+            ),
+          ],
         ),
       ),
     );
