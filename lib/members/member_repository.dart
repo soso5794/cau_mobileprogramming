@@ -2,6 +2,8 @@ import 'dart:convert';
 import '../admin/admin_gateway.dart';
 import '../admin/operations_data.dart';
 import '../community/community_data.dart';
+import '../recruitment/recruitment.dart';
+import 'dart:math';
 import '../calendar/workout_event.dart';
 import '../ranking/ranking_data.dart';
 
@@ -472,8 +474,44 @@ class MemberRepository {
     );
   }
 
+  /// A member may create a new post, never overwrite an existing post.
+  Future<void> publishRecruitment(RecruitmentInput input, RecruitmentDraft draft,
+      {required String ownerId}) async {
+    final owner = current;
+    if (owner == null || owner.id != ownerId || isOperator || owner.id == operatorId) {
+      throw const MemberFailure('회원 계정으로 다시 로그인해주세요.');
+    }
+    final issue = input.validate();
+    if (issue != null) throw MemberFailure(issue);
+    if (draft.conditions.length > 12 || draft.conditions.any((c) => c.trim().isEmpty || c.length > 120)) {
+      throw const MemberFailure('추가 조건을 확인해주세요.');
+    }
+    final random = Random.secure();
+    final suffix = List.generate(12, (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0')).join();
+    final post = RecruitmentPreview(
+      id: 'member-$suffix', sport: input.sport, title: draft.title.trim(),
+      time: input.schedule, place: input.place.trim(),
+      condition: [input.intensity, ...input.fields.entries.map((e) => '${e.key}: ${e.value}')].join(' · '),
+      people: '모집 ${input.minPeople}~${input.maxPeople}명',
+      description: draft.body.trim(), equipment: '추가 조건 및 본문 참고',
+      isDemo: false, authorId: owner.id, recruitmentInput: input,
+      extraConditions: List.unmodifiable(draft.conditions),
+    );
+    final error = post.validate();
+    if (error != null) throw MemberFailure(error);
+    if (_operations.posts.any((p) => p.id == post.id)) {
+      throw const MemberFailure('다시 등록해주세요.');
+    }
+    await _commit(_profiles, _credentials, sessionId, _remember,
+      operations: _operations.changed('회원 모집글 등록', post.title,
+        posts: [post, ..._operations.posts]));
+  }
+
   Future<void> saveRecruitment(RecruitmentPreview post) async {
     await _authorizeOperator();
+    if (post.isMemberPost || _operations.posts.any((p) => p.id == post.id && p.isMemberPost)) {
+      throw const MemberFailure('회원 모집글은 운영자 화면에서 수정할 수 없어요.');
+    }
     final error = post.validate();
     if (error != null) throw MemberFailure(error);
     await _commit(

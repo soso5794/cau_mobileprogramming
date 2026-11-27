@@ -1,5 +1,8 @@
 import 'package:exercise_assist/main.dart';
+import 'package:exercise_assist/map/location_service.dart';
 import 'package:exercise_assist/models/app_state.dart';
+import 'package:exercise_assist/screens/map_screen.dart';
+import 'package:exercise_assist/weather/weather_service.dart';
 import 'package:exercise_assist/members/member_controller.dart';
 import 'package:exercise_assist/members/member_repository.dart';
 import 'package:exercise_assist/members/member_store.dart';
@@ -17,10 +20,16 @@ class TestHasher extends PasswordHasher {
       stored['test'] == password;
 }
 
-AppState makeApp({MemberStore? store}) => AppState(
+AppState makeApp({
+  MemberStore? store,
+  WeatherService? weatherService,
+  LocationService? locationService,
+}) => AppState(
   members: MemberController(
     MemberRepository(store: store ?? MemoryMemberStore(), hasher: TestHasher()),
   ),
+  weatherService: weatherService,
+  locationService: locationService,
 );
 Future<GoRouter> openApp(
   WidgetTester tester,
@@ -30,6 +39,7 @@ Future<GoRouter> openApp(
   double scale = 1,
 }) async {
   if (!app.members.ready) await app.members.initialize();
+  MapScreen.showTiles = false; // 지도 타일은 네트워크라 UI 테스트에서 끈다.
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   tester.platformDispatcher.textScaleFactorTestValue = scale;

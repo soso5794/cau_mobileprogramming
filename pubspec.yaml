@@ -18,6 +18,10 @@ dependencies:
   shared_preferences: ^2.5.6
   cryptography: ^2.9.0
   http: ^1.6.0
+  # 8강 packages: 지도(OpenStreetMap, API 키 불필요) + 현재 위치
+  flutter_map: ^8.3.2
+  latlong2: ^0.9.1
+  geolocator: ^14.0.2
 
 dev_dependencies:
   flutter_test:

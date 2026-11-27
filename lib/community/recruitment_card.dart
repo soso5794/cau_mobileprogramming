@@ -36,7 +36,7 @@ class RecruitmentCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    post.isDemo ? '예시 모집' : '운영자 등록',
+                    post.sourceLabel,
                     style: const TextStyle(fontSize: 12),
                   ),
                 ],
@@ -89,7 +89,7 @@ class RecruitmentDetailScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Chip(
-          label: Text(post.isDemo ? '예시 모집 · 실제 신청 불가' : '운영자 등록 · 참가 신청 준비 중'),
+          label: Text(post.isDemo ? '예시 모집 · 실제 신청 불가' : '${post.sourceLabel} · 참가 신청 준비 중'),
         ),
         const SizedBox(height: 16),
         Text(
@@ -111,10 +111,22 @@ class RecruitmentDetailScreen extends StatelessWidget {
         Text('준비물', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         Text(post.equipment),
+        if (post.recruitmentInput != null) ...[
+          const SizedBox(height: 12),
+          if (post.recruitmentInput!.location != null) ...[
+            if (post.recruitmentInput!.location!.address.isNotEmpty) Text('주소: ${post.recruitmentInput!.location!.address}'),
+            Text('지도 위치 지정됨 (${post.recruitmentInput!.location!.latitude.toStringAsFixed(5)}, ${post.recruitmentInput!.location!.longitude.toStringAsFixed(5)})'),
+          ],
+          Text('병합 허용: ${post.recruitmentInput!.allowMerge ? '예' : '아니오'}'),
+          if (post.extraConditions.isNotEmpty)
+            Text('추가 조건: ${post.extraConditions.join(' · ')}'),
+        ],
         const SizedBox(height: 24),
         Text(
           post.isDemo
               ? '화면 확인용 모집글입니다. 일정·장소는 실제 모임이나 예약을 의미하지 않으며, 참가 신청은 아직 지원하지 않아요.'
+              : post.isMemberPost
+              ? '이 기기에 저장된 회원 모집글입니다. 다른 기기와 공유되지 않으며 참가 신청은 아직 지원하지 않아요.'
               : '운영자가 등록한 모집글입니다. 앱 내 참가 신청·시설 예약은 아직 지원하지 않아요.',
         ),
         const SizedBox(height: 20),
