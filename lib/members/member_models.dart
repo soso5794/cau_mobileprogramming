@@ -29,6 +29,8 @@ class MemberProfile {
     this.quietEnd = 480,
     List<WorkoutEvent> events = const [],
     Set<String> cancelledApplications = const {},
+    Set<String> verifiedSessionIds = const {},
+    this.tierExperiencePoints = 0,
   }) : events = List.unmodifiable(events),
        common = Map.unmodifiable(common),
        sports = List.unmodifiable(sports),
@@ -43,16 +45,17 @@ class MemberProfile {
          'enabled': true,
          ...notifications,
        }),
-       cancelledApplications = Set.unmodifiable(cancelledApplications);
+       cancelledApplications = Set.unmodifiable(cancelledApplications),
+       verifiedSessionIds = Set.unmodifiable(verifiedSessionIds);
   final List<WorkoutEvent> events;
   final String id, email, nickname, onboarding;
   final bool isDemo, quietEnabled;
   final Map<String, String> common;
   final List<String> sports;
   final Map<String, Map<String, String>> answers;
-  final Set<String> favorites, cancelledApplications;
+  final Set<String> favorites, cancelledApplications, verifiedSessionIds;
   final Map<String, bool> notifications;
-  final int reminder, quietStart, quietEnd;
+  final int reminder, quietStart, quietEnd, tierExperiencePoints;
   MemberProfile copyWith({
     String? nickname,
     String? onboarding,
@@ -67,6 +70,8 @@ class MemberProfile {
     int? quietEnd,
     List<WorkoutEvent>? events,
     Set<String>? cancelledApplications,
+    Set<String>? verifiedSessionIds,
+    int? tierExperiencePoints,
   }) => MemberProfile(
     events: events ?? this.events,
     id: id,
@@ -84,6 +89,8 @@ class MemberProfile {
     quietStart: quietStart ?? this.quietStart,
     quietEnd: quietEnd ?? this.quietEnd,
     cancelledApplications: cancelledApplications ?? this.cancelledApplications,
+    verifiedSessionIds: verifiedSessionIds ?? this.verifiedSessionIds,
+    tierExperiencePoints: tierExperiencePoints ?? this.tierExperiencePoints,
   );
   Map<String, Object?> toJson() => {
     'events': events.map((e) => e.toJson()).toList(),
@@ -102,6 +109,8 @@ class MemberProfile {
     'quietStart': quietStart,
     'quietEnd': quietEnd,
     'cancelledApplications': cancelledApplications.toList(),
+    'verifiedSessionIds': verifiedSessionIds.toList(),
+    'tierExperiencePoints': tierExperiencePoints,
   };
   factory MemberProfile.fromJson(Map<String, dynamic> j) => MemberProfile(
     events: (j['events'] as List? ?? [])
@@ -126,6 +135,10 @@ class MemberProfile {
     cancelledApplications: Set<String>.from(
       j['cancelledApplications'] as List? ?? [],
     ),
+    verifiedSessionIds: Set<String>.from(
+      j['verifiedSessionIds'] as List? ?? [],
+    ),
+    tierExperiencePoints: j['tierExperiencePoints'] as int? ?? 0,
   );
 }
 

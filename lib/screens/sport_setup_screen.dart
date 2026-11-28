@@ -8,8 +8,11 @@ import '../members/profile_draft.dart';
 import '../members/sport_questions.dart';
 
 class SportSetupScreen extends StatefulWidget {
-  const SportSetupScreen({super.key, required this.sport});
+  const SportSetupScreen({super.key, required this.sport, this.isNew = false});
   final String sport;
+
+  /// true면 아직 내 운동에 없는 새 종목이다. 저장하면 운동 목록에도 추가된다.
+  final bool isNew;
   @override
   State<SportSetupScreen> createState() => _SportSetupScreenState();
 }
@@ -47,10 +50,10 @@ class _SportSetupScreenState extends State<SportSetupScreen> {
   Future<void> save() async {
     setState(() => _error = ProfileDraft.validateSport(widget.sport, _answers));
     if (_error != null) return;
-    final ok = await context.read<AppState>().saveSportPreference(
-      widget.sport,
-      _answers,
-    );
+    final app = context.read<AppState>();
+    final ok = widget.isNew
+        ? await app.addSportWithPreference(widget.sport, _answers)
+        : await app.saveSportPreference(widget.sport, _answers);
     if (ok && mounted) {
       setState(() => _allowExit = true);
       context.go('/me');
@@ -66,14 +69,20 @@ class _SportSetupScreenState extends State<SportSetupScreen> {
         if (!p && !vm.busy) leave();
       },
       child: MemberPage(
-        title: '${widget.sport} · 운동 프로필',
+        title: widget.isNew
+            ? '${widget.sport} 추가 · 운동 정보'
+            : '${widget.sport} · 운동 프로필',
         onBack: () {
           if (!vm.busy) leave();
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('저장하기 전까지 기존 프로필은 바뀌지 않아요.'),
+            Text(
+              widget.isNew
+                  ? '새로 추가하는 운동이에요. 아래 정보를 입력하고 저장하면 내 운동에 추가돼요.'
+                  : '저장하기 전까지 기존 프로필은 바뀌지 않아요.',
+            ),
             SportQuestions(
               sport: widget.sport,
               answers: _answers,
@@ -91,7 +100,7 @@ class _SportSetupScreenState extends State<SportSetupScreen> {
             FilledButton(
               key: const Key('sport-save'),
               onPressed: vm.busy ? null : save,
-              child: const Text('운동 프로필 저장'),
+              child: Text(widget.isNew ? '운동 추가하고 저장' : '운동 프로필 저장'),
             ),
           ],
         ),

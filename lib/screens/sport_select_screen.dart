@@ -40,6 +40,23 @@ class SportSelectScreen extends StatelessWidget {
                 label: const Text('관심 종목 수정'),
               ),
             ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                FilledButton.icon(
+                  onPressed: () => context.push(AppRoutes.mates),
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                  label: const Text('AI 메이트 매칭'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => context.push(AppRoutes.qrAttendance),
+                  icon: const Icon(Icons.qr_code_scanner_rounded),
+                  label: const Text('QR 운동 인증'),
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
             if (sports.isEmpty)
               const Card(

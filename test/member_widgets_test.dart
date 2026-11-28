@@ -129,7 +129,7 @@ void main() {
     expect(find.text('상태: 승인'), findsOneWidget);
     expect(app.members.profile!.cancelledApplications, {'pending'});
   });
-  testWidgets('new local member sees no fabricated teams or tiers', (
+  testWidgets('new local member starts at Iron with no fabricated XP or teams', (
     tester,
   ) async {
     final app = makeApp();
@@ -140,11 +140,12 @@ void main() {
     );
     final router = await openApp(tester, app, location: '/me');
     await tester.scrollUntilVisible(
-      find.textContaining('티어 미배정'),
+      find.textContaining('현재 티어: 아이언'),
       250,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.textContaining('티어 미배정'), findsOneWidget);
+    expect(find.textContaining('현재 티어: 아이언'), findsOneWidget);
+    expect(app.members.profile!.tierExperiencePoints, 0);
     expect(find.textContaining('DEMO 티어'), findsNothing);
     router.go('/me/teams');
     await tester.pumpAndSettle();

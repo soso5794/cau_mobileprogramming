@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
+import '../features/ai_workout_planner.dart';
 import '../models/sport_icons.dart';
+import '../routing/app_routes.dart';
 import '../theme/app_theme.dart';
 
 /// PDF 5페이지: Week Plan (하단 탭 1번)
@@ -46,24 +49,58 @@ class PlanScreen extends StatelessWidget {
     }
 
     if (rows.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.event_note_outlined, size: 80, color: scheme.outlineVariant),
-              const SizedBox(height: 12),
-              Text('아직 주간 계획이 없어요',
-                  style: text.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(
-                '운동선택 탭에서 운동을 고르고\n자주 가는 위치를 저장하면 주간 계획이 만들어져요.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: scheme.onSurfaceVariant),
+      return SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const AiWorkoutPlannerCard(),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.event_note_outlined, size: 64, color: scheme.outlineVariant),
+                  const SizedBox(height: 12),
+                  Text('요일별 운동 적합도를 보려면 위치를 등록해주세요',
+                      style: text.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center),
+                  const SizedBox(height: 4),
+                  Text(
+                    app.selectedSports.isEmpty
+                        ? '내 운동을 추가하면 맞춤 계획을 만들 수 있어요.'
+                        : '운동별 자주 가는 위치를 등록하면 운동 적합도 표도 표시돼요.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: scheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 16),
+                  if (app.selectedSports.isEmpty)
+                    FilledButton.icon(
+                      key: const Key('plan-add-sport'),
+                      onPressed: () => context.push(AppRoutes.editProfile),
+                      icon: const Icon(Icons.add),
+                      label: const Text('운동 추가하러 가기'),
+                    )
+                  else
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final sport in app.selectedSports)
+                          FilledButton.tonalIcon(
+                            key: Key('plan-locations-$sport'),
+                            onPressed: () => context.push(AppRoutes.locationsPath(sport)),
+                            icon: Icon(sportIcon(sport), size: 18),
+                            label: Text('$sport 위치 등록'),
+                          ),
+                      ],
+                    ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
@@ -110,6 +147,8 @@ class PlanScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const AiWorkoutPlannerCard(),
+          const SizedBox(height: 12),
           // ──────────── ① 운동 × 요일 표 ────────────
           SectionCard(
             padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
@@ -185,6 +224,26 @@ class PlanScreen extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 12),
+
+          // 위치 관리 (운동선택 탭이 없으므로 여기서 바로 위치를 추가·삭제한다)
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final sport in app.selectedSports)
+                ActionChip(
+                  key: Key('plan-locations-$sport'),
+                  avatar: Icon(Icons.place_outlined,
+                      size: 16, color: sportColor(sport)),
+                  label: Text(rows.containsKey(sport)
+                      ? '$sport 위치 관리'
+                      : '$sport 위치 등록'),
+                  onPressed: () => context.push(AppRoutes.locationsPath(sport)),
+                ),
+            ],
           ),
           const SizedBox(height: 12),
 

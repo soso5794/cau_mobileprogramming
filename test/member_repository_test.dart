@@ -72,6 +72,7 @@ void main() {
           common: {'bio': '안녕'},
           notifications: {'team': false},
           onboarding: 'complete',
+          tierExperiencePoints: 275,
         ),
       );
       final restored = MemberRepository(store: store, hasher: TestHasher());
@@ -79,6 +80,7 @@ void main() {
       expect(restored.current!.favorites, {'농구'});
       expect(restored.current!.common['bio'], '안녕');
       expect(restored.current!.notifications['team'], isFalse);
+      expect(restored.current!.tierExperiencePoints, 275);
       await restored.logout();
       final after = MemberRepository(store: store, hasher: TestHasher());
       await after.restore();

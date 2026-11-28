@@ -35,13 +35,24 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    final sport = app.currentSport;
-    final location = app.currentLocation;
+    // 운동선택 탭이 없으므로, 고른 대상이 없으면 내 운동 중 위치가 있는 첫 운동으로 자동 선택한다.
+    String? pickSport = app.currentSport;
+    String? pickLoc = app.currentLocation;
+    if (pickSport == null || pickLoc == null) {
+      for (final s in app.selectedSports) {
+        final locs = app.locationsOf(s);
+        if (locs.isNotEmpty) {
+          pickSport = s;
+          pickLoc = locs.first;
+          break;
+        }
+      }
+    }
     final text = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
 
     // 아직 운동/위치를 고르지 않았으면 안내 화면
-    if (sport == null || location == null) {
+    if (pickSport == null || pickLoc == null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -53,21 +64,44 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               Text('운동과 위치를 먼저 골라주세요',
                   style: text.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
-              Text('운동선택 탭에서 운동을 누르고 위치를 등록하면\n여기에 날씨 분석이 나타나요.',
+              Text(
+                  app.selectedSports.isEmpty
+                      ? '내 운동을 추가하면 날씨 분석이 나타나요.'
+                      : '자주 가는 위치를 등록하면\n여기에 날씨 분석이 나타나요.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: scheme.onSurfaceVariant)),
               const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: () => context.go(AppRoutes.sports),
-                icon: const Icon(Icons.sports_basketball_outlined),
-                label: const Text('운동 선택하러 가기'),
-              ),
+              if (app.selectedSports.isEmpty)
+                FilledButton.icon(
+                  key: const Key('analysis-add-sport'),
+                  onPressed: () => context.push(AppRoutes.editProfile),
+                  icon: const Icon(Icons.add),
+                  label: const Text('운동 추가하러 가기'),
+                )
+              else
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final s in app.selectedSports)
+                      FilledButton.tonalIcon(
+                        key: Key('analysis-locations-$s'),
+                        onPressed: () =>
+                            context.push(AppRoutes.locationsPath(s)),
+                        icon: Icon(sportIcon(s), size: 18),
+                        label: Text('$s 위치 등록'),
+                      ),
+                  ],
+                ),
             ],
           ),
         ),
       );
     }
 
+    final sport = pickSport;
+    final location = pickLoc;
     final key = _key(location, _selectedDay);
     final weather = (_editedKey == key && _edited != null)
         ? _edited!
@@ -95,6 +129,34 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           SectionCard(
             child: Column(
               children: [
+                // 운동선택 탭이 없으므로 내 운동 사이를 여기서 바로 바꾼다.
+                if (app.selectedSports.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        for (final s in app.selectedSports)
+                          ChoiceChip(
+                            key: Key('analysis-sport-$s'),
+                            avatar: Icon(sportIcon(s), size: 16),
+                            label: Text(s),
+                            selected: s == sport,
+                            onSelected: (_) {
+                              final locs = app.locationsOf(s);
+                              if (locs.isEmpty) {
+                                context.push(AppRoutes.locationsPath(s));
+                              } else {
+                                context
+                                    .read<AppState>()
+                                    .selectTarget(s, locs.first);
+                              }
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
                 Row(
                   children: [
                     // ① 저장해둔 위치 중 선택 (운동 색 알약 모양)
@@ -142,6 +204,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                       style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
                       icon: const Icon(Icons.autorenew_rounded, size: 18),
                       label: const Text('자동'),
+                    ),
+                    IconButton(
+                      key: const Key('analysis-manage-locations'),
+                      tooltip: '$sport 위치 관리',
+                      onPressed: () =>
+                          context.push(AppRoutes.locationsPath(sport)),
+                      icon: const Icon(Icons.edit_location_alt_outlined),
                     ),
                   ],
                 ),

@@ -3,8 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'member_models.dart';
 import '../admin/operations_data.dart';
 import '../community/community_data.dart';
+import '../recruitment/recruitment.dart';
 import 'member_repository.dart';
 import '../calendar/workout_event.dart';
+import '../ranking/ranking_data.dart';
+import '../features/workout_qr_session.dart';
 
 class MemberController extends ChangeNotifier {
   MemberController(this.repository);
@@ -12,6 +15,7 @@ class MemberController extends ChangeNotifier {
   MemberProfile? get profile => repository.current;
   bool get isOperator => repository.isOperator;
   List<MemberProfile> get managedMembers => repository.managedMembers;
+  List<MemberProfile> get matchingProfiles => repository.matchingProfiles;
   OperationsData get operations => repository.operations;
   Future<bool> loginOperator(String password) =>
       _run(() => repository.loginOperator(password));
@@ -25,10 +29,22 @@ class MemberController extends ChangeNotifier {
       _run(() => repository.saveRanking(e));
   Future<bool> deleteRanking(String id) =>
       _run(() => repository.deleteRanking(id));
+  Future<bool> refreshRankings() => _run(repository.refreshRankings);
+  Future<bool> saveSportRanking(SportRankingEntry e) =>
+      _run(() => repository.saveSportRanking(e));
+  Future<bool> deleteSportRanking(String id) =>
+      _run(() => repository.deleteSportRanking(id));
+  Future<bool> publishRecruitment(RecruitmentInput input, RecruitmentDraft draft,
+          {required String ownerId}) =>
+      _run(() => repository.publishRecruitment(input, draft, ownerId: ownerId));
   Future<bool> saveRecruitment(RecruitmentPreview p) =>
       _run(() => repository.saveRecruitment(p));
   Future<bool> deleteRecruitment(String id) =>
       _run(() => repository.deleteRecruitment(id));
+  Future<bool> createWorkoutQrSession(WorkoutQrSession session) =>
+      _run(() => repository.createWorkoutQrSession(session));
+  Future<bool> confirmWorkoutQrSession(WorkoutQrSession session) =>
+      _run(() => repository.confirmWorkoutQrSession(session));
   bool ready = false, busy = false, _disposed = false;
   String? error, errorField;
   Future<bool> _run(Future<void> Function() action) async {

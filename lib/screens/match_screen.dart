@@ -41,6 +41,13 @@ class MatchScreen extends StatelessWidget {
             label: const Text('내 종목 프로필 수정'),
           ),
           const SizedBox(height: 16),
+          FilledButton.icon(
+            key: const Key('recruitment-create'),
+            onPressed: () => context.push(AppRoutes.recruitmentCreate(sport)),
+            icon: const Icon(Icons.add),
+            label: const Text('모집글 작성'),
+          ),
+          const SizedBox(height: 16),
           if (posts.isEmpty)
             const Card(
               child: Padding(
@@ -51,7 +58,7 @@ class MatchScreen extends StatelessWidget {
           for (final post in posts) RecruitmentCard(post: post),
           const SizedBox(height: 12),
           const Text(
-            '예시 모집과 운영자 등록 모집을 구분해 표시합니다. 일반 회원의 모집 작성·참가 신청은 준비 중입니다.',
+            '예시 모집, 운영자 등록, 회원 등록을 구분해 표시합니다. 회원 모집글은 이 기기에 저장되며 참가 신청은 준비 중입니다.',
           ),
         ],
       ),

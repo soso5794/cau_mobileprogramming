@@ -1,5 +1,7 @@
 import '../community/community_data.dart';
 import '../members/member_models.dart';
+import '../ranking/ranking_data.dart';
+import '../features/workout_qr_session.dart';
 
 class RankingEntry {
   const RankingEntry({
@@ -51,8 +53,11 @@ class OperationLog {
 class OperationsData {
   OperationsData({
     List<RankingEntry>? rankings,
+    List<SportRankingEntry>? sportRankings,
     List<RecruitmentPreview>? posts,
     List<OperationLog> logs = const [],
+    List<WorkoutQrSession> workoutSessions = const [],
+    List<String> processedMatchIds = const [],
   }) : rankings = List.unmodifiable(
          rankings ??
              const [
@@ -67,11 +72,17 @@ class OperationsData {
                ),
              ],
        ),
+       sportRankings = List.unmodifiable(sportRankings ?? demoSportRankings()),
        posts = List.unmodifiable(posts ?? demoRecruitments),
-       logs = List.unmodifiable(logs);
+       logs = List.unmodifiable(logs),
+       workoutSessions = List.unmodifiable(workoutSessions),
+       processedMatchIds = List.unmodifiable(processedMatchIds.toSet());
   final List<RankingEntry> rankings;
+  final List<SportRankingEntry> sportRankings;
   final List<RecruitmentPreview> posts;
   final List<OperationLog> logs;
+  final List<WorkoutQrSession> workoutSessions;
+  final List<String> processedMatchIds;
   List<RankingEntry> get sortedRankings => [...rankings]
     ..sort((a, b) {
       final byCount = b.count.compareTo(a.count);
@@ -81,10 +92,16 @@ class OperationsData {
     String action,
     String target, {
     List<RankingEntry>? rankings,
+    List<SportRankingEntry>? sportRankings,
     List<RecruitmentPreview>? posts,
+    List<WorkoutQrSession>? workoutSessions,
+    List<String>? processedMatchIds,
   }) => OperationsData(
     rankings: rankings ?? this.rankings,
+    sportRankings: sportRankings ?? this.sportRankings,
     posts: posts ?? this.posts,
+    workoutSessions: workoutSessions ?? this.workoutSessions,
+    processedMatchIds: processedMatchIds ?? this.processedMatchIds,
     logs: [
       OperationLog(action: action, target: target, at: DateTime.now()),
       ...logs,
@@ -92,10 +109,19 @@ class OperationsData {
   );
   Map<String, Object> toJson() => {
     'rankings': rankings.map((e) => e.toJson()).toList(),
+    'sportRankings': sportRankings.map((e) => e.toJson()).toList(),
     'posts': posts.map((e) => e.toJson()).toList(),
     'logs': logs.map((e) => e.toJson()).toList(),
+    'workoutSessions': workoutSessions.map((e) => e.toJson()).toList(),
+    'processedMatchIds': processedMatchIds,
   };
   factory OperationsData.fromJson(Map<String, dynamic> j) => OperationsData(
+    sportRankings: (j['sportRankings'] as List?)
+        ?.map(
+          (e) =>
+              SportRankingEntry.fromJson(Map<String, dynamic>.from(e as Map)),
+        )
+        .toList(),
     rankings: (j['rankings'] as List)
         .map((e) => RankingEntry.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList(),
@@ -108,5 +134,9 @@ class OperationsData {
     logs: (j['logs'] as List? ?? [])
         .map((e) => OperationLog.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList(),
+    workoutSessions: (j['workoutSessions'] as List? ?? [])
+        .map((e) => WorkoutQrSession.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
+    processedMatchIds: List<String>.from(j['processedMatchIds'] as List? ?? []),
   );
 }

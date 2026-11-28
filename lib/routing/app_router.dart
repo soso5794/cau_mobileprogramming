@@ -15,6 +15,7 @@ import '../screens/feature_page.dart';
 import '../screens/home_shell.dart';
 import '../screens/home_dashboard_screen.dart';
 import '../community/recruitment_card.dart';
+import '../recruitment/recruitment_create_screen.dart';
 import '../screens/location_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/map_screen.dart';
@@ -23,6 +24,8 @@ import '../screens/plan_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/ranking_screen.dart';
 import '../screens/route_error_screen.dart';
+import '../features/mate_matching_screen.dart';
+import '../features/qr_attendance_screen.dart';
 import '../screens/signup_screen.dart';
 import '../screens/sport_select_screen.dart';
 import '../screens/sport_setup_screen.dart';
@@ -173,7 +176,10 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
                           AppRoutes.sportLabels[state.pathParameters['sport']];
                       return sport == null
                           ? const RouteErrorScreen(message: '지원하지 않는 운동 종목이에요.')
-                          : SportSetupScreen(sport: sport);
+                          : SportSetupScreen(
+                              sport: sport,
+                              isNew: state.uri.queryParameters['new'] == '1',
+                            );
                     },
                   ),
                   GoRoute(
@@ -199,6 +205,16 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
                 builder: (context, state) => const SportSelectScreen(),
                 routes: [
                   GoRoute(
+                    path: 'mates',
+                    parentNavigatorKey: rootKey,
+                    builder: (context, state) => const MateMatchingScreen(),
+                  ),
+                  GoRoute(
+                    path: 'qr',
+                    parentNavigatorKey: rootKey,
+                    builder: (context, state) => const QrAttendanceScreen(),
+                  ),
+                  GoRoute(
                     path: 'posts/:id',
                     parentNavigatorKey: rootKey,
                     builder: (context, state) {
@@ -212,6 +228,16 @@ GoRouter createAppRouter(AppState app, {String? initialLocation}) {
                       return post == null
                           ? const RouteErrorScreen(message: '모집글을 찾을 수 없어요.')
                           : RecruitmentDetailScreen(post: post);
+                    },
+                  ),
+                  GoRoute(
+                    path: ':sport/create',
+                    parentNavigatorKey: rootKey,
+                    builder: (context, state) {
+                      final sport = AppRoutes.sportLabels[state.pathParameters['sport']];
+                      return sport == null
+                          ? const RouteErrorScreen(message: '지원하지 않는 운동 종목이에요.')
+                          : RecruitmentCreateScreen(initialSport: sport);
                     },
                   ),
                   GoRoute(

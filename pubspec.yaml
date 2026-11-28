@@ -17,7 +17,15 @@ dependencies:
   go_router: ^18.1.2
   shared_preferences: ^2.5.6
   cryptography: ^2.9.0
+  crypto: ^3.0.8
   http: ^1.6.0
+  # 8강 packages: 지도(OpenStreetMap, API 키 불필요) + 현재 위치
+  flutter_map: ^8.3.2
+  latlong2: ^0.9.1
+  geolocator: ^14.0.2
+  # QR 발급 및 실제 카메라 스캔
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.5.0
 
 dev_dependencies:
   flutter_test:
